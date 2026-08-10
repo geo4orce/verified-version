@@ -1,11 +1,170 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Verified Version</title>
-  </head>
-  <body>
-    <h1>Hello world</h1>
-  </body>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>vv - verified version</title>
+  <meta name="description" content="vv prints any tool's version as a strict SemVer triple, always.">
+  <meta name="theme-color" content="#182848">
+  <link rel="canonical" href="https://verified-version.org/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="vv - verified version">
+  <meta property="og:description" content="Give vv a tool name, get back one strict SemVer triple.">
+  <meta property="og:url" content="https://verified-version.org/">
+  <meta property="og:site_name" content="verified version">
+  <meta name="twitter:card" content="summary">
+
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg1: #4b6cb7;
+      --bg2: #182848;
+      --ink: #ffffff;
+      --muted: rgba(255, 255, 255, 0.72);
+      --code-bg: rgba(0, 0, 0, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      color: var(--ink);
+      text-align: center;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2));
+      -webkit-font-smoothing: antialiased;
+    }
+
+    main {
+      max-width: 640px;
+    }
+
+    h1 {
+      font-size: clamp(5rem, 22vw, 12rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .tagline {
+      margin-top: 0.75rem;
+      color: var(--muted);
+      font-size: clamp(1rem, 3.5vw, 1.35rem);
+      font-weight: 300;
+    }
+
+    .code {
+      display: inline-block;
+      margin: 2.25rem auto 0;
+      padding: 1rem 1.25rem;
+      border-radius: 10px;
+      background: var(--code-bg);
+      text-align: left;
+      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .code .prompt {
+      color: var(--muted);
+    }
+
+    .code .output {
+      color: #7ef0b0;
+    }
+
+    .contract {
+      margin-top: 1.75rem;
+      color: var(--muted);
+      font-size: 0.95rem;
+      font-weight: 300;
+    }
+
+    code {
+      color: var(--ink);
+      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    footer {
+      margin-top: 2.5rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid var(--muted);
+    }
+
+    footer a:hover {
+      border-bottom-color: var(--ink);
+    }
+
+    footer a:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: 4px;
+      border-bottom-color: transparent;
+      border-radius: 2px;
+    }
+
+    ::selection {
+      color: var(--bg2);
+      background: var(--ink);
+    }
+
+    @media (max-width: 420px) {
+      body {
+        padding: 1.5rem;
+      }
+
+      .code {
+        width: 100%;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>vv</h1>
+    <p class="tagline">verified version - one strict SemVer triple, always.</p>
+
+    <div class="code" aria-label="Example vv commands and output">
+      <div><span class="prompt">$</span> vv git</div>
+      <div><span class="output">2.55.0</span></div>
+      <div><span class="prompt">$</span> vv node</div>
+      <div><span class="output">22.13.1</span></div>
+      <div><span class="prompt">$</span> vv nope-xyz</div>
+      <div><span class="output">0.0.0</span></div>
+    </div>
+
+    <p class="contract">
+      Give it a tool, get back <code>X.Y.Z</code> - never blank, never noise.
+      Missing or unparseable? <code>0.0.0</code>. Machine-friendly by design.
+    </p>
+
+    <footer>
+      POSIX sh, no build. Add a tool by dropping a file in <code>recipes/</code>.
+      &nbsp;&middot;&nbsp;
+      <a href="https://github.com/geo4orce/verified-version" rel="noopener">source</a>
+    </footer>
+  </main>
+</body>
 </html>
