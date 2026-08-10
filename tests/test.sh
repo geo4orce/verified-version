@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 VV=$ROOT/vv
 TMP_ROOT=${TMPDIR:-/tmp}
 TEST_DIR=$TMP_ROOT/vv-test-$$
@@ -93,7 +93,7 @@ cat >"$BIN_DIR/terraform" <<'EOF'
 printf 'Terraform v1.9.8\n'
 EOF
 
-chmod 755 "$BIN_DIR"/* "$VV"
+chmod 755 "$BIN_DIR"/*
 
 check_version 'self version' '1.0.2' "$VV" -vv
 check_version 'missing tool' '0.0.0' "$VV" vv-missing-test-tool
