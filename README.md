@@ -1,28 +1,54 @@
-# verified-version.org
+# vv
 
-Static landing page for `vv`, a small command that returns a tool's version as
-one strict SemVer triple.
+`vv <tool>` prints one strict version triple: `X.Y.Z`.
 
-- Canonical site: <https://verified-version.org/>
-- Redirect domain: <https://verifiedversion.org/>
-- Hosting: DigitalOcean App Platform static site
-- Production branch: `main`
+Current release: `1.0.2`.
 
-## Local preview
-
-The site has no build step. Serve the repository root with any static web
-server, for example:
-
-```sh
-python -m http.server 8000
+```console
+$ vv git
+2.55.0
+$ vv nope
+0.0.0
 ```
 
-Then open <http://localhost:8000/>.
+No tool, noise, or parseable version means `0.0.0`. Exit status is always `0`.
 
-## Publishing
+## Install
 
-Changes pushed to `main` deploy automatically through DigitalOcean App
-Platform. Keep the site static and do not commit credentials or generated local
-configuration.
+Inspect, then run the installer:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidance.
+```sh
+curl -fsSLO https://verified-version.org/install.sh
+sh install.sh
+```
+
+Or clone it:
+
+```sh
+git clone https://github.com/geo4orce/verified-version.git
+./verified-version/vv -vv
+```
+
+## Usage
+
+```text
+vv <tool>        print the tool version as X.Y.Z
+vv -vv           print the vv version
+vv -h            show help
+```
+
+`vv` first tries the optional [`-vv` convention](SPEC.md), then a trusted
+recipe, then `<tool> --version`.
+
+## Contribute
+
+Tool owners should implement `-vv` upstream when possible. Otherwise, see
+[CONTRIBUTING.md](CONTRIBUTING.md) for the small recipe format.
+
+## Development
+
+```sh
+sh tests/test.sh
+```
+
+Website: <https://verified-version.org/>. MIT licensed.

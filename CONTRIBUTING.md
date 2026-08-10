@@ -1,18 +1,34 @@
 # Contributing
 
-Thanks for improving verified version.
+Keep changes small, portable, and POSIX `sh` compatible.
 
-## Website changes
+## Prefer `-vv`
 
-1. Fork or clone the repository.
-2. Create a focused branch.
-3. Edit the static files directly. There is no build step.
-4. Preview the repository with a local static web server.
-5. Check the page at narrow and wide viewport sizes and confirm keyboard focus
-   remains visible.
-6. Open a pull request describing the user-visible change.
+If you own the binary, prefer implementing `-vv` upstream:
 
-Keep dependencies out unless they solve a concrete need. Preserve semantic
-HTML, readable contrast, fast loading, and the canonical URL metadata.
+```text
+$ your-tool -vv
+1.2.3
+```
 
-Never include credentials, access tokens, private URLs, or personal data.
+It must print exactly one `X.Y.Z` line, write no labels or color, and exit `0`.
+Then `vv` needs no recipe.
+
+## Recipes
+
+Add a recipe only when upstream `-vv` is not practical and normal version
+output needs special handling.
+
+1. Copy `recipes/_template` to `recipes/<binary>`.
+2. Use only `VV_CMD`, `VV_LINE`, `VV_GREP`, or `vv_extract()`.
+3. Do not use the network, modify files, prompt, or cause side effects.
+4. Add a fixture and assertion to `tests/test.sh`.
+5. Run `sh tests/test.sh`.
+6. Open a focused pull request.
+
+All results must remain one strict `X.Y.Z` line with exit status `0`.
+
+## Website
+
+The website is static. Preview the repository root with any local web server.
+Preserve semantic HTML, keyboard focus, contrast, and canonical metadata.

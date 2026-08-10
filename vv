@@ -1,0 +1,131 @@
+#!/bin/sh
+
+VV_VERSION=1.0.2
+VV_TIMEOUT=${VV_TIMEOUT:-5}
+VV_ESC=$(printf '\033')
+
+VV_SELF=$0
+VV_DIR=$(CDPATH= cd -- "$(dirname -- "$VV_SELF")" 2>/dev/null && pwd) || VV_DIR=.
+
+if [ -z "${VV_RECIPES:-}" ]; then
+  if [ -d "$VV_DIR/recipes" ]; then
+    VV_RECIPES=$VV_DIR/recipes
+  else
+    VV_RECIPES=$VV_DIR/../share/vv/recipes
+  fi
+fi
+
+VV_TIMEOUT_BIN=
+if command -v timeout >/dev/null 2>&1; then
+  VV_TIMEOUT_BIN=timeout
+elif command -v gtimeout >/dev/null 2>&1; then
+  VV_TIMEOUT_BIN=gtimeout
+fi
+
+vv_run() {
+  if [ -n "$VV_TIMEOUT_BIN" ]; then
+    "$VV_TIMEOUT_BIN" "$VV_TIMEOUT" "$@" </dev/null 2>&1
+  else
+    "$@" </dev/null 2>&1
+  fi
+}
+
+vv_extract_generic() {
+  _clean=$(printf '%s\n' "$1" | sed "s/${VV_ESC}\[[0-9;]*[A-Za-z]//g")
+  if [ -n "$VV_LINE" ]; then
+    _clean=$(printf '%s\n' "$_clean" | sed -n "${VV_LINE}p")
+  fi
+  if [ -n "$VV_GREP" ]; then
+    printf '%s\n' "$_clean" | grep -oE "$VV_GREP" | head -1
+    return
+  fi
+  _v=$(printf '%s\n' "$_clean" | grep -oE '[0-9]+(\.[0-9]+)+' | head -1)
+  if [ -z "$_v" ]; then
+    _v=$(printf '%s\n' "$_clean" | grep -oE '[0-9]+' | head -1)
+  fi
+  printf '%s' "$_v"
+}
+
+vv_normalize() {
+  _n=$1
+  _n=${_n#[vV]}
+  if [ -z "$_n" ]; then
+    printf '0.0.0\n'
+    return
+  fi
+  _a=${_n%%.*}
+  _r=${_n#*.}; [ "$_r" = "$_n" ] && _r=
+  _b=${_r%%.*}
+  _r2=${_r#*.}; [ "$_r2" = "$_r" ] && _r2=
+  _c=${_r2%%.*}
+  case $_a in ''|*[!0-9]*) _a=0;; esac
+  case $_b in ''|*[!0-9]*) _b=0;; esac
+  case $_c in ''|*[!0-9]*) _c=0;; esac
+  printf '%s.%s.%s\n' "$_a" "$_b" "$_c"
+}
+
+vv_usage() {
+  cat <<EOF
+vv $VV_VERSION
+
+Usage:
+  vv <tool>        print the tool version as X.Y.Z
+  vv -vv           print the vv version
+  vv -h            show help
+EOF
+}
+
+vv_lookup() {
+  _bin=$1
+
+  if ! command -v "$_bin" >/dev/null 2>&1; then
+    printf '0.0.0\n'
+    return
+  fi
+
+  _probe=$(vv_run "$_bin" -vv | head -1 | tr -d '[:space:]')
+  if printf '%s' "$_probe" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    printf '%s\n' "$_probe"
+    return
+  fi
+
+  VV_CMD=--version
+  VV_LINE=
+  VV_GREP=
+  unset -f vv_extract 2>/dev/null
+
+  if [ -f "$VV_RECIPES/$_bin" ]; then
+    # shellcheck disable=SC1090
+    . "$VV_RECIPES/$_bin"
+  fi
+
+  # Word splitting is intentional for recipe commands such as "version --client".
+  # shellcheck disable=SC2086
+  _raw=$(vv_run "$_bin" $VV_CMD)
+  if [ $? -ne 0 ]; then
+    printf '0.0.0\n'
+    return
+  fi
+
+  if command -v vv_extract >/dev/null 2>&1; then
+    _ver=$(printf '%s\n' "$_raw" | vv_extract)
+  else
+    _ver=$(vv_extract_generic "$_raw")
+  fi
+
+  vv_normalize "$_ver"
+}
+
+case ${1:-} in
+  ''|-h|--help)
+    vv_usage
+    ;;
+  -vv|--version)
+    printf '%s\n' "$VV_VERSION"
+    ;;
+  *)
+    vv_lookup "$1"
+    ;;
+esac
+
+exit 0

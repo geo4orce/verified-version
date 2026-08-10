@@ -1,0 +1,10 @@
+# Prefer asking the tool owner to implement: tool -vv -> X.Y.Z
+# Use the smallest override needed.
+
+VV_CMD="--version"
+# VV_LINE=1
+# VV_GREP='[0-9]+\.[0-9]+\.[0-9]+'
+
+# vv_extract() {
+#   grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1
+# }
