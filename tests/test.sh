@@ -138,8 +138,8 @@ EOF
 
 chmod 755 "$BIN_DIR"/*
 
-check_version 'self verified version' '2.0.0' "$VV" --verified-version
-check_version 'self version' '2.0.0' "$VV" --version
+check_version 'self verified version' '2.0.1' "$VV" --verified-version
+check_version 'self version' '2.0.1' "$VV" --version
 check_rejected 'old -vv rejected' "$VV" -vv
 check_version 'missing tool' '0.0.0' "$VV" vv-missing-test-tool
 check_version 'strict protocol' '3.4.5' env PATH="$BIN_DIR:$PATH" "$VV" strict-tool
@@ -155,7 +155,7 @@ check_version 'terraform recipe' '1.9.8' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$
 
 PREFIX=$TEST_DIR/prefix
 VV_SOURCE_DIR=$ROOT sh "$ROOT/install.sh" --prefix "$PREFIX" >/dev/null
-check_version 'installed version' '2.0.0' "$PREFIX/bin/vv" --verified-version
+check_version 'installed version' '2.0.1' "$PREFIX/bin/vv" --verified-version
 check_version 'installed recipe' '1.26.4' env PATH="$BIN_DIR:$PATH" "$PREFIX/bin/vv" go
 sh "$ROOT/install.sh" --uninstall --prefix "$PREFIX" >/dev/null
 if [ -e "$PREFIX/bin/vv" ]; then

@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.0.1 - 2026-08-09
+
+- Refine footer color, spacing, and markup.
+
 ## 2.0.0 - 2026-08-09
 
 - Replace the conflicting `-vv` convention with `--verified-version`.

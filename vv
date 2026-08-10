@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VV_VERSION=2.0.0
+VV_VERSION=2.0.1
 VV_TIMEOUT=${VV_TIMEOUT:-5}
 VV_ESC=$(printf '\033')
 
