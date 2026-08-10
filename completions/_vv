@@ -2,5 +2,5 @@
 
 _arguments \
   '(- 1 *)'{-h,--help}'[show help]' \
-  '(- 1 *)'{-vv,--version}'[show vv version]' \
+  '(- 1 *)'{--verified-version,--version}'[show vv version]' \
   '1:tool:_command_names'

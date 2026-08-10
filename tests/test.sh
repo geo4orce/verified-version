@@ -42,10 +42,26 @@ check_version() {
   fi
 }
 
+check_rejected() {
+  _name=$1
+  shift
+
+  set +e
+  "$@" >"$TEST_DIR/output" 2>"$TEST_DIR/error"
+  _status=$?
+  set -e
+
+  if [ "$_status" -ne 0 ]; then
+    printf 'ok - %s\n' "$_name"
+  else
+    fail "$_name (status=$_status)"
+  fi
+}
+
 cat >"$BIN_DIR/strict-tool" <<'EOF'
 #!/bin/sh
 case ${1:-} in
-  -vv) printf '3.4.5\n' ;;
+  --verified-version) printf '3.4.5\n' ;;
   --version) printf 'strict-tool 9.9.9\n' ;;
   *) exit 1 ;;
 esac
@@ -54,7 +70,7 @@ EOF
 cat >"$BIN_DIR/generic-tool" <<'EOF'
 #!/bin/sh
 case ${1:-} in
-  -vv) printf 'not-semver\n' ;;
+  --verified-version) printf 'not-semver\n' ;;
   --version) printf 'generic-tool version 2.7\n' ;;
   *) exit 1 ;;
 esac
@@ -63,8 +79,35 @@ EOF
 cat >"$BIN_DIR/integer-tool" <<'EOF'
 #!/bin/sh
 case ${1:-} in
-  -vv) exit 1 ;;
+  --verified-version) exit 1 ;;
   --version) printf 'Build 4200\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/noisy-tool" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) printf '3.4.5\nextra\n' ;;
+  --version) printf 'noisy-tool 5.6\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/nonzero-tool" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) printf '8.8.8\n'; exit 1 ;;
+  --version) printf 'nonzero-tool 6.1\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/zero-tool" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) printf '01.2.3\n' ;;
+  --version) printf 'zero-tool 01.002.0003\n' ;;
   *) exit 1 ;;
 esac
 EOF
@@ -95,10 +138,15 @@ EOF
 
 chmod 755 "$BIN_DIR"/*
 
-check_version 'self version' '1.0.2' "$VV" -vv
+check_version 'self verified version' '2.0.0' "$VV" --verified-version
+check_version 'self version' '2.0.0' "$VV" --version
+check_rejected 'old -vv rejected' "$VV" -vv
 check_version 'missing tool' '0.0.0' "$VV" vv-missing-test-tool
-check_version 'strict -vv' '3.4.5' env PATH="$BIN_DIR:$PATH" "$VV" strict-tool
-check_version 'malformed -vv fallback' '2.7.0' env PATH="$BIN_DIR:$PATH" "$VV" generic-tool
+check_version 'strict protocol' '3.4.5' env PATH="$BIN_DIR:$PATH" "$VV" strict-tool
+check_version 'malformed protocol fallback' '2.7.0' env PATH="$BIN_DIR:$PATH" "$VV" generic-tool
+check_version 'extra output fallback' '5.6.0' env PATH="$BIN_DIR:$PATH" "$VV" noisy-tool
+check_version 'nonzero protocol fallback' '6.1.0' env PATH="$BIN_DIR:$PATH" "$VV" nonzero-tool
+check_version 'leading zero fallback' '1.2.3' env PATH="$BIN_DIR:$PATH" "$VV" zero-tool
 check_version 'integer build' '4200.0.0' env PATH="$BIN_DIR:$PATH" "$VV" integer-tool
 check_version 'failed command' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" failed-tool
 check_version 'go recipe' '1.26.4' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$ROOT/recipes" "$VV" go
@@ -107,7 +155,7 @@ check_version 'terraform recipe' '1.9.8' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$
 
 PREFIX=$TEST_DIR/prefix
 VV_SOURCE_DIR=$ROOT sh "$ROOT/install.sh" --prefix "$PREFIX" >/dev/null
-check_version 'installed version' '1.0.2' "$PREFIX/bin/vv" -vv
+check_version 'installed version' '2.0.0' "$PREFIX/bin/vv" --verified-version
 check_version 'installed recipe' '1.26.4' env PATH="$BIN_DIR:$PATH" "$PREFIX/bin/vv" go
 sh "$ROOT/install.sh" --uninstall --prefix "$PREFIX" >/dev/null
 if [ -e "$PREFIX/bin/vv" ]; then

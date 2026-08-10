@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VV_VERSION=1.0.2
+VV_VERSION=2.0.0
 VV_TIMEOUT=${VV_TIMEOUT:-5}
 VV_ESC=$(printf '\033')
 
@@ -46,6 +46,20 @@ vv_extract_generic() {
   printf '%s' "$_v"
 }
 
+vv_component() {
+  _part=$1
+  case $_part in
+    ''|*[!0-9]*)
+      printf '0'
+      return
+      ;;
+  esac
+  while [ "${_part#0}" != "$_part" ]; do
+    _part=${_part#0}
+  done
+  printf '%s' "${_part:-0}"
+}
+
 vv_normalize() {
   _n=$1
   _n=${_n#[vV]}
@@ -58,9 +72,9 @@ vv_normalize() {
   _b=${_r%%.*}
   _r2=${_r#*.}; [ "$_r2" = "$_r" ] && _r2=
   _c=${_r2%%.*}
-  case $_a in ''|*[!0-9]*) _a=0;; esac
-  case $_b in ''|*[!0-9]*) _b=0;; esac
-  case $_c in ''|*[!0-9]*) _c=0;; esac
+  _a=$(vv_component "$_a")
+  _b=$(vv_component "$_b")
+  _c=$(vv_component "$_c")
   printf '%s.%s.%s\n' "$_a" "$_b" "$_c"
 }
 
@@ -69,9 +83,10 @@ vv_usage() {
 vv $VV_VERSION
 
 Usage:
-  vv <tool>        print the tool version as X.Y.Z
-  vv -vv           print the vv version
-  vv -h            show help
+  vv <tool>               print the tool version as X.Y.Z
+  vv --verified-version   print the vv version
+  vv --version            print the vv version
+  vv -h                   show help
 EOF
 }
 
@@ -83,10 +98,14 @@ vv_lookup() {
     return
   fi
 
-  _probe=$(vv_run "$_bin" -vv | head -1 | tr -d '[:space:]')
-  if printf '%s' "$_probe" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-    printf '%s\n' "$_probe"
-    return
+  if _probe=$(vv_run "$_bin" --verified-version); then
+    _probe_lines=$(printf '%s\n' "$_probe" | wc -l | tr -d ' ')
+    if [ "$_probe_lines" -eq 1 ] && \
+      printf '%s\n' "$_probe" | grep -qE \
+        '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+      printf '%s\n' "$_probe"
+      return
+    fi
   fi
 
   VV_CMD=--version
@@ -119,8 +138,12 @@ case ${1:-} in
   ''|-h|--help)
     vv_usage
     ;;
-  -vv|--version)
+  --verified-version|--version)
     printf '%s\n' "$VV_VERSION"
+    ;;
+  -*)
+    printf 'unknown option: %s\n' "$1" >&2
+    exit 2
     ;;
   *)
     vv_lookup "$1"

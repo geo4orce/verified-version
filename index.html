@@ -22,9 +22,9 @@
       color-scheme: dark;
       --bg1: #4b6cb7;
       --bg2: #182848;
-      --ink: #ffffff;
+      --ink: #fff;
       --muted: rgba(255, 255, 255, 0.72);
-      --code-bg: rgba(0, 0, 0, 0.28);
+      --mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 
     * {
@@ -33,149 +33,128 @@
       padding: 0;
     }
 
-    html,
-    body {
-      min-height: 100%;
-    }
-
     body {
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 2rem;
+      display: grid;
+      place-items: center;
+      padding: clamp(1.5rem, 5vw, 2rem);
       color: var(--ink);
       text-align: center;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: linear-gradient(135deg, var(--bg1), var(--bg2));
-      -webkit-font-smoothing: antialiased;
     }
 
     main {
+      width: 100%;
       max-width: 640px;
     }
 
     h1 {
       font-size: clamp(5rem, 22vw, 12rem);
       font-weight: 800;
-      letter-spacing: -0.04em;
-      line-height: 1;
+      letter-spacing: 0.1em;
+    }
+
+    .tagline,
+    .contract {
+      color: var(--muted);
+      font-weight: 300;
+      line-height: 2.2;
     }
 
     .tagline {
-      margin-top: 0.75rem;
-      color: var(--muted);
       font-size: clamp(1rem, 3.5vw, 1.35rem);
-      font-weight: 300;
     }
 
     .code {
       display: inline-block;
-      margin: 2.25rem auto 0;
+      width: min(300px, 100%);
+      margin-top: 2.25rem;
       padding: 1rem 1.25rem;
+      overflow-x: auto;
       border-radius: 10px;
-      background: var(--code-bg);
+      background: rgba(0, 0, 0, 0.28);
       text-align: left;
-      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: var(--mono);
       font-size: 0.95rem;
-      line-height: 1.7;
+      line-height: 1.6;
     }
 
-    .code .prompt {
+    .prompt {
       color: var(--muted);
     }
 
-    .code .output {
+    .output {
       color: #7ef0b0;
+      margin: 0 1rem 1rem;
+    }
+
+    .output:last-child {
+      margin-bottom: 0;
     }
 
     .contract {
-      margin-top: 1.75rem;
-      color: var(--muted);
-      font-size: 0.95rem;
-      font-weight: 300;
+      margin: 1rem;
+      font-size: 0.9rem;
     }
 
     code {
       color: var(--ink);
-      font-family: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-family: var(--mono);
     }
 
     footer {
-      margin-top: 2.5rem;
+      margin-top: 2rem;
       color: var(--muted);
-      font-size: 0.85rem;
-    }
-
-    footer p + p {
-      margin-top: 0.65rem;
+      font-size: 0.8rem;
     }
 
     footer a {
-      color: var(--ink);
-      text-decoration: none;
-      border-bottom: 1px solid var(--muted);
+      color: inherit;
+      text-underline-offset: 0.2em;
     }
 
     footer a:hover {
-      border-bottom-color: var(--ink);
+      color: var(--ink);
     }
 
     footer a:focus-visible {
       outline: 2px solid var(--ink);
       outline-offset: 4px;
-      border-bottom-color: transparent;
       border-radius: 2px;
     }
 
-    ::selection {
-      color: var(--bg2);
-      background: var(--ink);
-    }
-
-    @media (max-width: 420px) {
-      body {
-        padding: 1.5rem;
-      }
-
-      .code {
-        width: 100%;
-        overflow-x: auto;
-      }
-    }
   </style>
 </head>
 <body>
   <main>
     <h1>vv</h1>
-    <p class="tagline">verified version - one strict SemVer triple, always.</p>
+    <p class="tagline">Verified Version<br>One strict SemVer triple, always.</p>
 
     <div class="code" aria-label="Example vv commands and output">
       <div><span class="prompt">$</span> vv git</div>
-      <div><span class="output">2.55.0</span></div>
+      <div class="output">2.55.0</div>
       <div><span class="prompt">$</span> vv node</div>
-      <div><span class="output">22.13.1</span></div>
+      <div class="output">22.13.1</div>
       <div><span class="prompt">$</span> vv nope-xyz</div>
-      <div><span class="output">0.0.0</span></div>
+      <div class="output">0.0.0</div>
     </div>
 
     <p class="contract">
-      Give it a tool, get back <code>X.Y.Z</code> - never blank, never noise.
-      Missing or unparseable? <code>0.0.0</code>. Machine-friendly by design.
+      Give it a tool, get back strict <code>X.Y.Z</code> - never blank, never noise.
+      <br>Missing or unparseable? <code>0.0.0</code>.
+      <br>Machine-friendly by design. POSIX sh, no build.
     </p>
 
     <footer>
       <p>
-        POSIX sh, no build.
-        <a href="https://github.com/geo4orce/verified-version" rel="noopener">source</a>
-      </p>
-      <p>
-        Created by <a href="https://web-opt.com/" rel="noopener">Web-Opt.com LLC</a>
-        &nbsp;&middot;&nbsp; All rights reserved &copy; 2026
+        Created by <a href="https://web-opt.com/">Web-Opt.com</a>
         &nbsp;&middot;&nbsp;
-        <a href="https://github.com/geo4orce/verified-version/blob/main/CONTRIBUTING.md#recipes" rel="noopener">Contribute on GitHub</a>
+        All rights reserved &copy; 2026
         &nbsp;&middot;&nbsp;
-        <a href="https://paypal.me/ageo" rel="noopener">Send $1</a>
+        <a href="https://github.com/geo4orce/verified-version/blob/main/CONTRIBUTING.md">GitHub</a>
+        &nbsp;&middot;&nbsp;
+        <a href="https://paypal.me/ageo/1">Send $1</a>
       </p>
     </footer>
   </main>

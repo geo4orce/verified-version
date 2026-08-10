@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VV_INSTALL_VERSION=${VV_INSTALL_VERSION:-1.0.2}
+VV_INSTALL_VERSION=${VV_INSTALL_VERSION:-2.0.0}
 VV_PREFIX=${VV_PREFIX:-"$HOME/.local"}
 VV_MODE=install
 
@@ -100,7 +100,7 @@ cp "$VV_SOURCE/completions/vv.bash" "$VV_BASH_DIR/vv"
 cp "$VV_SOURCE/completions/_vv" "$VV_ZSH_DIR/_vv"
 cp "$VV_SOURCE/completions/vv.fish" "$VV_FISH_DIR/vv.fish"
 
-[ "$("$VV_BIN_DIR/vv" -vv)" = "$VV_INSTALL_VERSION" ] || {
+[ "$("$VV_BIN_DIR/vv" --verified-version)" = "$VV_INSTALL_VERSION" ] || {
   printf '%s\n' 'installed version does not match' >&2
   exit 1
 }

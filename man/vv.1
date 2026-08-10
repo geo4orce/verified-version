@@ -9,7 +9,7 @@
 .Ar tool
 .Pp
 .Nm
-.Fl vv
+.Fl -verified-version
 .Sh DESCRIPTION
 .Nm
 prints exactly one
@@ -18,16 +18,16 @@ line for
 .Ar tool .
 Missing or unparseable versions produce
 .Li 0.0.0 .
-The exit status is always zero.
+Normal lookups always exit zero.
 .Pp
 Lookup order is a valid upstream
-.Fl vv
+.Fl -verified-version
 response, a trusted recipe, then
 .Ar tool
 .Fl -version .
 .Sh OPTIONS
 .Bl -tag -width Ds
-.It Fl vv , Fl -version
+.It Fl -verified-version , Fl -version
 Print the
 .Nm
 version.
@@ -43,7 +43,8 @@ Probe timeout in seconds. Default: 5.
 .El
 .Sh EXIT STATUS
 The utility exits zero for every normal result, including missing or
-unparseable tools. A non-zero status indicates a defect in
+unparseable tools. Invalid options exit two. Any other non-zero status
+indicates a defect in
 .Nm .
 .Sh AUTHORS
 .An Geo Artemenko

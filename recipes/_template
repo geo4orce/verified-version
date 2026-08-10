@@ -1,4 +1,4 @@
-# Prefer asking the tool owner to implement: tool -vv -> X.Y.Z
+# Prefer asking the tool owner to implement: tool --verified-version -> X.Y.Z
 # Use the smallest override needed.
 
 VV_CMD="--version"
