@@ -14,7 +14,7 @@ Missing or unparseable versions produce `0.0.0`. Lookups always exit `0`.
 ## Install
 
 ```sh
-brew install geo4orce/tap/verified-version
+brew install geo4orce/tap/vv
 ```
 
 Or clone and run it directly:

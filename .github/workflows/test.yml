@@ -26,5 +26,5 @@ jobs:
   homebrew:
     runs-on: macos-latest
     steps:
-      - run: brew install geo4orce/tap/verified-version
-      - run: brew test geo4orce/tap/verified-version
+      - run: brew install geo4orce/tap/vv
+      - run: brew test geo4orce/tap/vv
