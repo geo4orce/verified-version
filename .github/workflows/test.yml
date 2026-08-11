@@ -21,4 +21,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - run: shellcheck -s sh vv install.sh tests/test.sh
+      - run: shellcheck -s sh vv tests/test.sh
+
+  homebrew:
+    runs-on: macos-latest
+    steps:
+      - run: brew install geo4orce/tap/verified-version
+      - run: brew test geo4orce/tap/verified-version

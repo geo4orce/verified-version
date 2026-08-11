@@ -183,19 +183,6 @@ check_version 'go recipe' '1.26.4' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE
 check_version 'kubectl recipe' '1.30.2' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" kubectl
 check_version 'terraform recipe' '1.9.8' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" terraform
 
-PREFIX=$TEST_DIR/prefix
-VV_SOURCE_DIR=$ROOT sh "$ROOT/install.sh" --prefix "$PREFIX" >/dev/null
-check_version 'installed version' '2.1.0' "$PREFIX/bin/vv" --verified-version
-check_version 'installed recipe' '1.26.4' env PATH="$BIN_DIR:$PATH" "$PREFIX/bin/vv" go
-check_version 'installed nano recipe' '8.4.0' env PATH="$BIN_DIR:$PATH" "$PREFIX/bin/vv" nano
-check_version 'installed pico recipe' '8.4.0' env PATH="$BIN_DIR:$PATH" "$PREFIX/bin/vv" pico
-sh "$ROOT/install.sh" --uninstall --prefix "$PREFIX" >/dev/null
-if [ -e "$PREFIX/bin/vv" ]; then
-  fail 'uninstall'
-else
-  printf 'ok - uninstall\n'
-fi
-
 if [ "$FAILURES" -ne 0 ]; then
   printf '%s test(s) failed\n' "$FAILURES" >&2
   exit 1
