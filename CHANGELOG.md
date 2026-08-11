@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Make Homebrew the primary installation method.
+- Remove the standalone install script.
+
 ## 2.1.0 - 2026-08-10
 
 - Let recipes skip `--verified-version` for tools that ignore or mishandle it.

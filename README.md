@@ -14,11 +14,10 @@ Missing or unparseable versions produce `0.0.0`. Lookups always exit `0`.
 ## Install
 
 ```sh
-curl -fsSLO https://verified-version.org/install.sh
-sh install.sh
+brew install geo4orce/tap/verified-version
 ```
 
-Or clone it:
+Or clone and run it directly:
 
 ```sh
 git clone https://github.com/geo4orce/verified-version.git
