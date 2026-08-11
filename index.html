@@ -1,4 +1,4 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -36,9 +36,10 @@
 
     body {
       min-height: 100vh;
+      min-height: 100svh;
       display: grid;
       place-items: center;
-      padding: clamp(1.5rem, 5vw, 2rem);
+      padding: clamp(0.85rem, 3vw, 1.5rem);
       color: var(--ink);
       text-align: center;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -47,39 +48,51 @@
 
     main {
       width: 100%;
-      max-width: 640px;
+      max-width: 560px;
+      display: grid;
+      justify-items: center;
+      gap: clamp(0.7rem, 2vh, 1rem);
     }
 
     h1 {
-      font-size: clamp(5rem, 22vw, 12rem);
+      font-size: clamp(4.5rem, 18vw, 7.5rem);
       font-weight: 800;
-      letter-spacing: 0.1em;
+      line-height: 0.82;
+      letter-spacing: 0.06em;
     }
 
     .tagline,
-    .contract,
-    .install-note {
+    .contract {
       color: var(--muted);
-      font-weight: 300;
-      line-height: 2.2;
     }
 
     .tagline {
-      font-size: clamp(1rem, 3.5vw, 1.35rem);
+      font-size: clamp(0.95rem, 3.5vw, 1.15rem);
+      line-height: 1.3;
+    }
+
+    .tagline strong,
+    .tagline span {
+      display: block;
+    }
+
+    .tagline strong {
+      margin-bottom: 0.2rem;
+      color: var(--ink);
+      font-size: 1.05em;
+      font-weight: 700;
     }
 
     .code {
-      display: inline-block;
-      width: min(300px, 100%);
-      margin-top: 2.25rem;
-      padding: 1rem 1.25rem;
+      width: 100%;
+      padding: 0.8rem 1rem;
       overflow-x: auto;
-      border-radius: 10px;
+      border-radius: 8px;
       background: rgba(0, 0, 0, 0.28);
       text-align: left;
       font-family: var(--mono);
-      font-size: 0.95rem;
-      line-height: 1.6;
+      font-size: clamp(0.78rem, 3vw, 0.9rem);
+      line-height: 1.45;
     }
 
     .prompt {
@@ -87,8 +100,8 @@
     }
 
     .output {
+      margin: 0 1rem 0.65rem;
       color: #7ef0b0;
-      margin: 0 1rem 1rem;
     }
 
     .output:last-child {
@@ -96,28 +109,86 @@
     }
 
     .contract {
-      margin: 1rem;
-      font-size: 0.9rem;
+      max-width: 470px;
+      display: grid;
+      gap: 0.55rem;
+      font-size: clamp(0.8rem, 2.8vw, 0.9rem);
+      font-weight: 300;
+      line-height: 1.45;
     }
 
-    .install {
-      margin-top: 1.5rem;
-    }
-
-    .install h2 {
-      font-size: 1rem;
-    }
-
-    .install .code {
+    .disclosures {
       width: min(520px, 100%);
-      margin-top: 0.75rem;
+      display: grid;
+      gap: 0.55rem;
+    }
+
+    details {
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.16);
+      text-align: left;
+    }
+
+    summary {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.65rem 0.9rem;
+      cursor: pointer;
+      list-style: none;
+      font-size: 0.92rem;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    summary::after {
+      content: "+";
+      color: var(--muted);
+      font-family: var(--mono);
+      font-size: 1.15rem;
+      font-weight: 400;
+    }
+
+    details[open] summary {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    }
+
+    details[open] summary::after {
+      content: "−";
+    }
+
+    summary:hover,
+    summary:focus-visible {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    summary:focus-visible {
+      outline: 2px solid var(--ink);
+      outline-offset: -3px;
+    }
+
+    .panel-body {
+      padding: 0.75rem;
+    }
+
+    .install-code {
       white-space: pre-wrap;
       overflow-wrap: anywhere;
     }
 
     .install-note {
-      margin-top: 0.5rem;
-      font-size: 0.85rem;
+      margin-top: 0.55rem;
+      color: var(--muted);
+      font-size: 0.78rem;
+      line-height: 1.4;
     }
 
     code {
@@ -126,11 +197,10 @@
     }
 
     footer {
-      margin-top: 2rem;
-      padding: 0 1rem;
+      padding: 0 0.5rem;
       color: var(--gray);
-      font-size: 0.8rem;
-      line-height: 1.6;
+      font-size: 0.72rem;
+      line-height: 1.4;
     }
 
     a {
@@ -147,35 +217,66 @@
       outline-offset: 4px;
       border-radius: 2px;
     }
+
+    @media (max-height: 680px) {
+      body {
+        padding-block: 0.65rem;
+      }
+
+      main {
+        gap: 0.6rem;
+      }
+
+      h1 {
+        font-size: 4.25rem;
+      }
+
+      .contract {
+        gap: 0.4rem;
+        font-size: 0.78rem;
+      }
+    }
   </style>
 </head>
 <body>
   <main>
     <h1>vv</h1>
-    <p class="tagline"><strong>Verified Version</strong><br>One strict SemVer triple, always.</p>
-
-    <div class="code" role="group" aria-label="Example vv commands and output">
-      <div><span class="prompt">$</span> vv git</div>
-      <div class="output">2.55.0</div>
-      <div><span class="prompt">$</span> vv node</div>
-      <div class="output">22.13.1</div>
-      <div><span class="prompt">$</span> vv nope-xyz</div>
-      <div class="output">0.0.0</div>
-    </div>
-
-    <p class="contract">
-      Give it a tool, get back strict <code>X.Y.Z</code> - never blank, never noise.
-      <br>Missing or unparseable? <code>0.0.0</code>.
-      <br>Machine-friendly by design. POSIX sh, no build.
+    <p class="tagline">
+      <strong>Verified Version</strong>
+      <span>One strict SemVer triple, always.</span>
     </p>
 
-    <section class="install" aria-labelledby="install-heading">
-      <h2 id="install-heading">Install</h2>
-      <pre class="code"><code><span class="prompt">$</span> brew install geo4orce/tap/verified-version</code></pre>
-      <p class="install-note">
-        Or <a href="https://github.com/geo4orce/verified-version">clone it from GitHub</a>.
-      </p>
-    </section>
+    <div class="contract">
+      <p>Give it a tool, get back strict <code>X.Y.Z</code>. Never blank, never noise.</p>
+      <p>Missing or unparseable becomes <code>0.0.0</code>. POSIX sh, no build.</p>
+    </div>
+
+    <div class="disclosures">
+      <details name="vv-info">
+        <summary>Install with Homebrew</summary>
+        <div class="panel-body">
+          <pre class="code install-code"><code><span class="prompt">$</span> brew install geo4orce/tap/vv</code></pre>
+          <p class="install-note">
+            Homebrew works on macOS and Linux. You can also
+            <a href="https://github.com/geo4orce/verified-version">clone it from GitHub</a>.
+          </p>
+        </div>
+      </details>
+
+      <details name="vv-info">
+        <summary>See examples</summary>
+        <div class="panel-body">
+          <div class="code" role="group" aria-label="Example vv commands and output">
+            <div><span class="prompt">$</span> vv git</div>
+            <div class="output">2.55.0</div>
+            <div><span class="prompt">$</span> vv node</div>
+            <div class="output">22.13.1</div>
+            <div><span class="prompt">$</span> vv nope-xyz</div>
+            <div class="output">0.0.0</div>
+          </div>
+        </div>
+      </details>
+    </div>
 
     <footer>
       Created by <a href="https://web-opt.com/">Web-Opt.com</a>
