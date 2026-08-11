@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-VV_INSTALL_VERSION=${VV_INSTALL_VERSION:-2.0.1}
+VV_INSTALL_VERSION=${VV_INSTALL_VERSION:-2.1.0}
 VV_PREFIX=${VV_PREFIX:-"$HOME/.local"}
 VV_MODE=install
 
@@ -94,6 +94,7 @@ mkdir -p "$VV_BIN_DIR" "$VV_SHARE_DIR/recipes" "$VV_MAN_DIR" \
 cp "$VV_SOURCE/vv" "$VV_BIN_DIR/vv"
 chmod 755 "$VV_BIN_DIR/vv"
 cp "$VV_SOURCE"/recipes/go "$VV_SOURCE"/recipes/kubectl \
+  "$VV_SOURCE"/recipes/nano "$VV_SOURCE"/recipes/pico \
   "$VV_SOURCE"/recipes/terraform "$VV_SHARE_DIR/recipes/"
 cp "$VV_SOURCE/man/vv.1" "$VV_MAN_DIR/vv.1"
 cp "$VV_SOURCE/completions/vv.bash" "$VV_BASH_DIR/vv"

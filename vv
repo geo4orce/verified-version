@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VV_VERSION=2.0.1
+VV_VERSION=2.1.0
 VV_TIMEOUT=${VV_TIMEOUT:-5}
 VV_ESC=$(printf '\033')
 
@@ -98,19 +98,11 @@ vv_lookup() {
     return
   fi
 
-  if _probe=$(vv_run "$_bin" --verified-version); then
-    _probe_lines=$(printf '%s\n' "$_probe" | wc -l | tr -d ' ')
-    if [ "$_probe_lines" -eq 1 ] && \
-      printf '%s\n' "$_probe" | grep -qE \
-        '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
-      printf '%s\n' "$_probe"
-      return
-    fi
-  fi
-
   VV_CMD=--version
   VV_LINE=
   VV_GREP=
+  VV_SKIP_PROBE=0
+  VV_ALLOW_NONZERO=0
   unset -f vv_extract 2>/dev/null
 
   if [ -f "$VV_RECIPES/$_bin" ]; then
@@ -118,9 +110,28 @@ vv_lookup() {
     . "$VV_RECIPES/$_bin"
   fi
 
+  if [ "$VV_SKIP_PROBE" != 1 ]; then
+    if _probe=$(vv_run "$_bin" --verified-version); then
+      _probe_lines=$(printf '%s\n' "$_probe" | wc -l | tr -d ' ')
+      if [ "$_probe_lines" -eq 1 ] && \
+        printf '%s\n' "$_probe" | grep -qE \
+          '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+        printf '%s\n' "$_probe"
+        return
+      fi
+    fi
+  fi
+
   # Word splitting is intentional for recipe commands such as "version --client".
   # shellcheck disable=SC2086
-  if ! _raw=$(vv_run "$_bin" $VV_CMD); then
+  _raw=$(vv_run "$_bin" $VV_CMD)
+  _rc=$?
+
+  if [ "$_rc" -eq 124 ] || [ -z "$_raw" ]; then
+    printf '0.0.0\n'
+    return
+  fi
+  if [ "$_rc" -ne 0 ] && [ "$VV_ALLOW_NONZERO" != 1 ]; then
     printf '0.0.0\n'
     return
   fi

@@ -57,7 +57,8 @@
     }
 
     .tagline,
-    .contract {
+    .contract,
+    .install-note {
       color: var(--muted);
       font-weight: 300;
       line-height: 2.2;
@@ -99,6 +100,26 @@
       font-size: 0.9rem;
     }
 
+    .install {
+      margin-top: 1.5rem;
+    }
+
+    .install h2 {
+      font-size: 1rem;
+    }
+
+    .install .code {
+      width: min(520px, 100%);
+      margin-top: 0.75rem;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .install-note {
+      margin-top: 0.5rem;
+      font-size: 0.85rem;
+    }
+
     code {
       color: var(--ink);
       font-family: var(--mono);
@@ -112,16 +133,16 @@
       line-height: 1.6;
     }
 
-    footer a {
+    a {
       color: inherit;
       text-underline-offset: 0.2em;
     }
 
-    footer a:hover {
+    a:hover {
       color: var(--ink);
     }
 
-    footer a:focus-visible {
+    a:focus-visible {
       outline: 2px solid var(--ink);
       outline-offset: 4px;
       border-radius: 2px;
@@ -148,12 +169,20 @@
       <br>Machine-friendly by design. POSIX sh, no build.
     </p>
 
+    <section class="install" aria-labelledby="install-heading">
+      <h2 id="install-heading">Install</h2>
+      <pre class="code"><code><span class="prompt">$</span> curl -fsSLO https://verified-version.org/install.sh
+<span class="prompt">$</span> sh install.sh</code></pre>
+      <p class="install-note">
+        Or <a href="https://github.com/geo4orce/verified-version">clone it from GitHub</a>.
+      </p>
+    </section>
+
     <footer>
       Created by <a href="https://web-opt.com/">Web-Opt.com</a>
       &nbsp;&middot;&nbsp;
-      All rights reserved &copy; 2026
-      &nbsp;&middot;&nbsp;
-      <a href="https://github.com/geo4orce/verified-version/blob/main/CONTRIBUTING.md">GitHub</a>
+      All rights reserved&nbsp;&copy;&nbsp;
+      2026
       &nbsp;&middot;&nbsp;
       <a href="https://paypal.me/ageo/1">Send $1</a>
     </footer>

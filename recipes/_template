@@ -4,6 +4,8 @@
 VV_CMD="--version"
 # VV_LINE=1
 # VV_GREP='[0-9]+\.[0-9]+\.[0-9]+'
+# VV_SKIP_PROBE=1     # skip tool --verified-version
+# VV_ALLOW_NONZERO=1  # accept output when the command exits non-zero
 
 # vv_extract() {
 #   grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1

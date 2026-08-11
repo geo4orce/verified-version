@@ -24,7 +24,8 @@ version output needs special handling.
 1. First propose or implement `--verified-version` in the upstream tool.
 2. If that is not practical, explain why in the pull request.
 3. Copy `recipes/_template` to `recipes/<binary>`.
-4. Use only `VV_CMD`, `VV_LINE`, `VV_GREP`, or `vv_extract()`.
+4. Use only `VV_CMD`, `VV_LINE`, `VV_GREP`, `VV_SKIP_PROBE`,
+   `VV_ALLOW_NONZERO`, or `vv_extract()`.
 5. Do not use the network, modify files, prompt, or cause side effects.
 6. Add a fixture and assertion to `tests/test.sh`.
 7. Run `sh tests/test.sh` and open a focused pull request.

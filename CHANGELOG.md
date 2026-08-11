@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.1.0 - 2026-08-10
+
+- Let recipes skip `--verified-version` for tools that ignore or mishandle it.
+- Let recipes accept version output from tools that exit non-zero.
+- Add installed recipes for GNU nano and pico.
+
 ## 2.0.1 - 2026-08-09
 
 - Refine footer color, spacing, and markup.

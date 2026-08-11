@@ -1,0 +1,4 @@
+# pico is commonly provided by nano and shares its version behavior.
+VV_CMD="-version"
+VV_SKIP_PROBE=1
+VV_ALLOW_NONZERO=1
