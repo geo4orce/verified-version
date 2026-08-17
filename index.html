@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>vv - verified version</title>
   <meta name="description" content="vv prints any tool's version as a strict SemVer triple, always.">
   <meta name="theme-color" content="#182848">
   <link rel="canonical" href="https://verified-version.org/">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
   <link rel="stylesheet" href="/styles.css">
 
   <meta property="og:type" content="website">
@@ -15,7 +17,13 @@
   <meta property="og:description" content="Give vv a tool name, get back one strict SemVer triple.">
   <meta property="og:url" content="https://verified-version.org/">
   <meta property="og:site_name" content="verified version">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://verified-version.org/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="vv - Verified Version. One strict SemVer triple, always.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://verified-version.org/og-image.png">
+  <meta name="twitter:image:alt" content="vv - Verified Version. One strict SemVer triple, always.">
 </head>
 <body class="home-page">
   <main class="home-main">
@@ -26,45 +34,36 @@
     </p>
 
     <div class="contract">
-      <p>Give it a tool, get back strict <code>X.Y.Z</code>. Never blank, never noise.</p>
-      <p>Missing or unparseable becomes <code>0.0.0</code>. POSIX sh, no build.</p>
+      <p>Give it a tool. Get strict <code>X.Y.Z</code>.</p>
+      <p>Missing or unparseable becomes <code>0.0.0</code>.</p>
+      <p>POSIX sh. No build.</p>
     </div>
 
     <div class="info-panels">
       <section class="info-panel" aria-labelledby="install-heading">
-        <h2 class="info-heading" id="install-heading">Install with Homebrew</h2>
-        <div class="panel-body">
-          <pre class="code install-code"><code><span class="prompt">$</span> brew install geo4orce/tap/vv</code></pre>
-          <p class="install-note">
-            Homebrew works on macOS and Linux. You can also
-            <a href="https://github.com/geo4orce/verified-version">clone it from GitHub</a>.
-          </p>
+        <h2 class="info-heading" id="install-heading">Install</h2>
+        <div class="install-row">
+          <code class="install-command"><span class="prompt">$</span> <span id="install-command">brew install geo4orce/tap/vv</span></code>
+          <button class="copy-button" type="button" data-copy-target="install-command" aria-live="polite" hidden>Copy</button>
         </div>
       </section>
 
       <section class="info-panel" aria-labelledby="examples-heading">
         <h2 class="info-heading" id="examples-heading">Examples</h2>
-        <div class="panel-body">
-          <div class="code" role="group" aria-label="Example vv commands and output">
-            <div><span class="prompt">$</span> vv git</div>
-            <div class="output">2.55.0</div>
-            <div><span class="prompt">$</span> vv node</div>
-            <div class="output">22.13.1</div>
-            <div><span class="prompt">$</span> vv nope-xyz</div>
-            <div class="output">0.0.0</div>
-          </div>
-        </div>
+        <pre class="examples"><code><span class="prompt">$</span> vv git       <span class="output">2.55.0</span>
+<span class="prompt">$</span> vv node      <span class="output">26.6.0</span>
+<span class="prompt">$</span> vv nope-xyz  <span class="output">0.0.0</span></code></pre>
       </section>
     </div>
 
     <footer>
-      Created by <a href="https://web-opt.com/">Web-Opt.com</a>
+      &copy; 2026 <a href="https://web-opt.com/">Web-Opt.com LLC</a>
       &nbsp;&middot;&nbsp;
-      All rights reserved&nbsp;&copy;&nbsp;
-      2026
+      <a href="https://github.com/geo4orce/verified-version/blob/main/LICENSE">MIT License</a>
       &nbsp;&middot;&nbsp;
-      <a href="https://paypal.me/ageo/1">Send $1</a>
+      <a href="https://github.com/geo4orce/verified-version">GitHub</a>
     </footer>
   </main>
+  <script src="/site.js"></script>
 </body>
 </html>

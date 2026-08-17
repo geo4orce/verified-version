@@ -133,9 +133,12 @@ The primary installation command is:
 brew install geo4orce/tap/vv
 ```
 
-The website remains a static, responsive, accessible page with no JavaScript
-and no build step. All styling lives in `styles.css`; HTML files contain no
-inline styles.
+The website remains a static, responsive, accessible page with no build step.
+All styling lives in `styles.css`; HTML files contain no inline styles. The
+only JavaScript progressively enhances the install-command copy button. Core
+content and navigation work without it. Social previews use the local
+`og-image.png`, and supported Apple devices use the local
+`apple-touch-icon.png`.
 
 ## Non-goals
 

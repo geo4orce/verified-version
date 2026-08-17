@@ -123,20 +123,22 @@ code {
   line-height: 1.25;
 }
 
-.panel-body {
-  padding: 0.75rem;
-}
-
-.code {
-  width: 100%;
+.install-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.75rem;
   padding: 0.8rem 1rem;
-  overflow-x: auto;
   border-radius: 8px;
   background: rgba(0, 0, 0, 0.28);
-  text-align: left;
+}
+
+.install-command,
+.examples {
   font-family: var(--mono);
   font-size: clamp(0.78rem, 3vw, 0.9rem);
-  line-height: 1.45;
+  line-height: 1.55;
 }
 
 .prompt {
@@ -144,24 +146,40 @@ code {
 }
 
 .output {
-  margin: 0 1rem 0.65rem;
   color: #7ef0b0;
 }
 
-.output:last-child {
-  margin-bottom: 0;
+.install-command {
+  overflow-x: auto;
+  white-space: nowrap;
+  cursor: text;
+  user-select: all;
 }
 
-.install-code {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+.copy-button {
+  min-width: 4.5rem;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  color: var(--ink);
+  font: 600 0.75rem/1 var(--mono);
+  background: rgba(255, 255, 255, 0.08);
+  cursor: pointer;
 }
 
-.install-note {
-  margin-top: 0.55rem;
-  color: var(--muted);
-  font-size: 0.78rem;
-  line-height: 1.4;
+.copy-button:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.copy-button:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.examples {
+  padding: 0.75rem 1rem 0.9rem;
+  overflow-x: auto;
 }
 
 footer {

@@ -1,32 +1,27 @@
-# vv - Verified Version
+# vv
+
+**Verified Version**
 
 One strict SemVer triple, always.
 
-Give it a tool, get back strict `X.Y.Z`. Never blank, never noise.
+Give it a tool. Get strict `X.Y.Z`.
 
-Missing or unparseable becomes `0.0.0`. POSIX sh, no build.
+Missing or unparseable becomes `0.0.0`.
 
-```console
-$ vv git
-2.55.0
-$ vv node
-22.13.1
-$ vv nope-xyz
-0.0.0
-```
+POSIX sh. No build.
 
 ## Install
 
-```sh
-brew install geo4orce/tap/vv
+```console
+$ brew install geo4orce/tap/vv
 ```
 
-Homebrew works on macOS and Linux. You can also clone it from GitHub:
+## Examples
 
-```sh
-git clone https://github.com/geo4orce/verified-version.git
+```console
+$ vv git       2.55.0
+$ vv node      26.6.0
+$ vv nope-xyz  0.0.0
 ```
 
-## Support
-
-geo@web-opt.com
+© 2026 [Web-Opt.com LLC](https://web-opt.com/) · [MIT License](https://github.com/geo4orce/verified-version/blob/main/LICENSE) · [GitHub](https://github.com/geo4orce/verified-version)

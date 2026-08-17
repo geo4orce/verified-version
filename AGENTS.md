@@ -8,14 +8,15 @@ This repository contains two deliberately separate artifacts for one product:
    compatibility behavior, tests, manual, completions, and release number live
    in this repository.
 2. The verified-version.org website is a static explanation and installation
-   page. It has HTML and CSS only. It is not part of the command at runtime and
-   has no independent package version.
+   page. It has HTML, CSS, and one small clipboard script. It is not part of the
+   command at runtime and has no independent package version.
 
 Keep their implementation concerns separate:
 
 - A CLI behavior change belongs in `vv`, `tests/test.sh`, `SPEC.md`, and when
   user-facing, `man/vv.1`.
-- A website change belongs in `index.html`, `404.html`, or `styles.css`.
+- A website change belongs in `index.html`, `404.html`, `styles.css`,
+  `site.js`, or a static image asset.
 - `VERSION` and `VV_VERSION` version the CLI, not the website.
 - The website may describe the CLI, but the CLI never reads website files.
 - Website deployment must not install or execute the CLI.
@@ -79,7 +80,9 @@ the exception can eventually be removed.
 - `completions/`: Bash, Zsh, and Fish completions.
 - `index.html`: production website markup.
 - `styles.css`: all production and 404-page styling.
-- `404.html` and `favicon.svg`: static website support files.
+- `site.js`: progressive enhancement for the install-command copy button only.
+- `404.html`, `favicon.svg`, `apple-touch-icon.png`, and `og-image.png`:
+  static website support files.
 - `SPEC.md`: normative product and behavior contract.
 - `README.md`: deliberately short public introduction matching the website.
 - `CONTRIBUTING.md`: human contribution guidance.
@@ -126,10 +129,12 @@ The formula should install only `vv`, the manual, and shell completions.
 ## Website and deployment
 
 The website is the static repository root. Its production files are
-`index.html`, `404.html`, `styles.css`, and `favicon.svg`. Keep it semantic,
-responsive, free of JavaScript, and free of a build step. Keep all styling in
-`styles.css`. Preserve canonical metadata, focus visibility, readable contrast,
-and no horizontal overflow.
+`index.html`, `404.html`, `styles.css`, `favicon.svg`,
+`apple-touch-icon.png`, `og-image.png`, and `site.js`. Keep it semantic,
+responsive, and free of a build step. Keep all styling in `styles.css`.
+JavaScript is limited to the progressively enhanced copy button; core content
+and navigation must work without it. Preserve canonical and social metadata,
+the meta CSP, focus visibility, readable contrast, and no horizontal overflow.
 
 `main` automatically deploys the production site through DigitalOcean App
 Platform. Application code and release details belong here. Use the
