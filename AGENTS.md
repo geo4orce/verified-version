@@ -47,35 +47,34 @@ The detailed normative behavior is in `SPEC.md`.
 The implementation is the single `vv` shell script.
 
 1. Resolve the requested command with `command -v`.
-2. Derive the command name from the argument, including an explicit path.
-3. Unless the internal compatibility table marks that command unsafe to probe,
-   try `tool --verified-version` and accept only one strict numeric triple.
-4. Run the fallback arguments selected by the internal compatibility table, or
-   `tool --version` by default.
-5. Reject empty output, timeouts, and non-zero exits unless that known command
-   is explicitly allowed to return non-zero.
-6. Extract and normalize the first version-like value.
+2. Resolve symlinks and derive the command name, including from an explicit
+   path.
+3. Read `<prefix>/share/vv/<tool>` when the resolved command lives at
+   `<prefix>/bin/<tool>` and the declaration contains a dotted version.
+4. Return `0.0.0` without executing a command resolved inside a macOS `.app`
+   bundle when no valid declaration exists.
+5. Try `tool --verified-version` and accept only one strict numeric triple.
+6. Try the generic flag ladder `--version`, `-version`, `version`, `-V`, and
+   `-v`, taking the first dotted version even when the command exits non-zero.
+7. Reject bare integers, empty output, and timed-out invocations, then normalize
+   the first dotted version-like value.
 
 ## Compatibility policy
 
-Compatibility exceptions are explicit functions in `vv`; there are no sourced
-recipes or user configuration files. Keep these three decisions distinct:
+`vv` has no per-command compatibility exceptions, sourced recipes, or user
+configuration files. Every tool follows the same declarative file, strict
+protocol, and generic flag ladder. Compatibility should be added upstream by
+shipping `<prefix>/share/vv/<tool>` or implementing `--verified-version`.
 
-- `vv_probe_is_safe`: commands that may receive `--verified-version` without
-  side effects.
-- `vv_run_fallback`: the exact fallback arguments for known commands.
-- `vv_fallback_allows_nonzero`: known commands whose useful version output is
-  accompanied by a non-zero exit.
-
-Add an exception only for confirmed real-world behavior. Include a fixture and
-test for every exception. Prefer upstream adoption of `--verified-version` so
-the exception can eventually be removed.
+The only execution guard is structural: never probe a command resolved inside
+a macOS `.app` bundle. Include representative fixtures for the generic ladder,
+declarative files, strict protocol, and application-bundle guard.
 
 ## Repository map
 
 - `vv`: complete command implementation.
 - `VERSION`: release version used to check the embedded version.
-- `tests/test.sh`: executable contract and compatibility fixtures.
+- `tests/test.sh`: executable contract and protocol fixtures.
 - `man/vv.1`: complete installed command reference.
 - `completions/`: Bash, Zsh, and Fish completions.
 - `index.html`: production website markup.
@@ -99,9 +98,9 @@ sh tests/test.sh
 shellcheck -s sh vv tests/test.sh
 ```
 
-Every behavior change needs a focused fixture and assertion. Every compatibility
-exception must be tested against representative output. Tests must verify the
-one-line output and exit status contract.
+Every behavior change needs a focused fixture and assertion. Tests must verify
+the one-line output and exit status contract, including that declarative and
+application-bundle cases do not execute the target command.
 
 Keep shell syntax portable. Do not add Bash-only syntax.
 

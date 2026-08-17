@@ -20,12 +20,14 @@ Missing or unparseable versions produce
 .Li 0.0.0 .
 Normal lookups always exit zero.
 .Pp
-Lookup prefers a valid upstream
+Lookup first reads a declared version file at
+.Pa <prefix>/share/vv/<tool>
+without executing the tool, then tries the strict
 .Fl -verified-version
-response unless the command is known to handle unknown options unsafely.
-It then uses a known compatibility fallback or
-.Ar tool
-.Fl -version .
+protocol, then a tool-agnostic ladder of common version flags
+.Pq Fl -version , Fl version , Cm version , Fl V , Fl v .
+The first source that yields a dotted numeric version wins. Any other result is
+.Li 0.0.0 .
 .Sh OPTIONS
 .Bl -tag -width Ds
 .It Fl -verified-version , Fl -version
@@ -41,11 +43,26 @@ Print brief help.
 Probe timeout in seconds. Default: 5.
 .El
 .Sh COMPATIBILITY
-Known command exceptions are built into
-.Nm .
-They control whether probing is safe, which fallback arguments are used, and
-whether useful output may accompany a non-zero exit.
+.Nm
+keeps no per-command exceptions: every tool is tried the same way. A tool
+becomes fully compatible by shipping a
+.Pa share/vv/<tool>
+version file or by implementing
+.Fl -verified-version ;
+otherwise the generic flag ladder is attempted. Only a dotted numeric version is
+accepted, so a bare integer in help text is never mistaken for a version. A tool
+that reports no parseable version resolves to
+.Li 0.0.0 .
 There are no user recipe or parser configuration files.
+.Pp
+A tool that resolves to a path inside a macOS application bundle
+.Pq Pa *.app
+is never executed, because even a bundled command-line stub may open a window on
+an unknown option. Such a tool yields
+.Li 0.0.0
+unless it ships a
+.Pa share/vv/<tool>
+file, which is read without execution.
 .Sh EXIT STATUS
 The utility exits zero for every normal result, including missing or
 unparseable tools. Invalid options exit two. Any other non-zero status

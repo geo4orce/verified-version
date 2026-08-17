@@ -77,13 +77,28 @@ case ${1:-} in
 esac
 EOF
 
-cat >"$BIN_DIR/integer-tool" <<'EOF'
+cat >"$BIN_DIR/dashversion-tool" <<'EOF'
 #!/bin/sh
-case ${1:-} in
-  --verified-version) exit 1 ;;
-  --version) printf 'Build 4200\n' ;;
-  *) exit 1 ;;
-esac
+[ "${1:-}" = -version ] || exit 1
+printf 'DashVersion Tool -version 8.4.1\n'
+EOF
+
+cat >"$BIN_DIR/subcommand-tool" <<'EOF'
+#!/bin/sh
+[ "${1:-}" = version ] || exit 1
+printf 'subcommand-tool version 1.2.3\n'
+EOF
+
+cat >"$BIN_DIR/upperflag-tool" <<'EOF'
+#!/bin/sh
+[ "${1:-}" = -V ] || exit 1
+printf 'upperflag-tool 1.9.8\n'
+EOF
+
+cat >"$BIN_DIR/lowerflag-tool" <<'EOF'
+#!/bin/sh
+[ "${1:-}" = -v ] || exit 1
+printf 'v3.4\n'
 EOF
 
 cat >"$BIN_DIR/noisy-tool" <<'EOF'
@@ -98,8 +113,7 @@ EOF
 cat >"$BIN_DIR/nonzero-tool" <<'EOF'
 #!/bin/sh
 case ${1:-} in
-  --verified-version) printf '8.8.8\n'; exit 1 ;;
-  --version) printf 'nonzero-tool 6.1\n' ;;
+  --version) printf 'nonzero-tool 6.1\n'; exit 3 ;;
   *) exit 1 ;;
 esac
 EOF
@@ -113,39 +127,32 @@ case ${1:-} in
 esac
 EOF
 
+cat >"$BIN_DIR/integer-only-tool" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --version) printf 'Build 4200\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/noversion-tool" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --version) printf 'usage: noversion-tool [-v] [file]\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
 cat >"$BIN_DIR/failed-tool" <<'EOF'
 #!/bin/sh
 printf 'error 999\n'
 exit 1
 EOF
 
-cat >"$BIN_DIR/nano" <<'EOF'
+cat >"$BIN_DIR/timed-tool" <<'EOF'
 #!/bin/sh
-case ${1:-} in
-  --verified-version) printf '9.9.9\n' ;;
-  -version) printf 'GNU nano, version 8.4\n'; exit 1 ;;
-  *) exit 1 ;;
-esac
-EOF
-
-cp "$BIN_DIR/nano" "$BIN_DIR/pico"
-
-cat >"$BIN_DIR/go" <<'EOF'
-#!/bin/sh
-[ "${1:-}" = version ] || exit 1
-printf 'go version go1.26.4 test/arch\n'
-EOF
-
-cat >"$BIN_DIR/kubectl" <<'EOF'
-#!/bin/sh
-[ "${1:-}" = version ] && [ "${2:-}" = --client ] || exit 1
-printf 'Client Version: v1.30.2\n'
-EOF
-
-cat >"$BIN_DIR/terraform" <<'EOF'
-#!/bin/sh
-[ "${1:-}" = version ] || exit 1
-printf 'Terraform v1.9.8\n'
+printf 'timed-tool 7.8.9\n'
+exit 124
 EOF
 
 cat >"$BIN_DIR/brew" <<'EOF'
@@ -166,32 +173,60 @@ case ${1:-} in
 esac
 EOF
 
-cat >"$BIN_DIR/smerge" <<'EOF'
+# Declarative source: a version file next to the bin, plus a binary that records
+# if it is ever run. The file must win first, so the binary must stay untouched.
+DECL_PREFIX="$TEST_DIR/opt/declared"
+mkdir -p "$DECL_PREFIX/bin" "$DECL_PREFIX/share/vv"
+cat >"$DECL_PREFIX/bin/declared-tool" <<EOF
 #!/bin/sh
-case ${1:-} in
-  --verified-version) printf '9.9.9\n' ;;
-  --version) printf 'Sublime Merge Build 2125\n' ;;
-  *) exit 1 ;;
-esac
+: >"$TEST_DIR/declared-ran"
+printf 'declared-tool 9.9.9\n'
 EOF
+chmod 755 "$DECL_PREFIX/bin/declared-tool"
+printf '5.6.7\n' >"$DECL_PREFIX/share/vv/declared-tool"
 
-cat >"$BIN_DIR/subl" <<'EOF'
+cat >"$DECL_PREFIX/bin/declared-zero-tool" <<EOF
 #!/bin/sh
-case ${1:-} in
-  --verified-version) printf '9.9.9\n' ;;
-  --version) printf 'Sublime Text Build 4200\n' ;;
-  *) exit 1 ;;
-esac
+: >"$TEST_DIR/declared-zero-ran"
+printf 'declared-zero-tool 9.9.9\n'
 EOF
+chmod 755 "$DECL_PREFIX/bin/declared-zero-tool"
+printf '0.0.0\n' >"$DECL_PREFIX/share/vv/declared-zero-tool"
 
-cat >"$BIN_DIR/sw_vers" <<'EOF'
+# GUI launcher: the bundle entry point at Contents/MacOS/<App> must never run.
+APP_MACOS_DIR="$TEST_DIR/Sample.app/Contents/MacOS"
+mkdir -p "$APP_MACOS_DIR"
+cat >"$APP_MACOS_DIR/Sample" <<EOF
 #!/bin/sh
-case ${1:-} in
-  --verified-version) printf '9.9.9\n' ;;
-  -productVersion) printf '26.6.1\n' ;;
-  *) exit 1 ;;
-esac
+: >"$TEST_DIR/gui-launched"
+printf '9.9.9\n'
 EOF
+chmod 755 "$APP_MACOS_DIR/Sample"
+ln -s "$APP_MACOS_DIR/Sample" "$BIN_DIR/sample-gui"
+
+# Bundled CLI without a declaration: inside a .app it must never be executed
+# (even a safe-looking flag can pop a window, as subl does), so it is 0.0.0.
+APP_CLI_DIR="$TEST_DIR/Sample.app/Contents/Resources/bin"
+mkdir -p "$APP_CLI_DIR"
+cat >"$APP_CLI_DIR/samplecli" <<EOF
+#!/bin/sh
+: >"$TEST_DIR/bundlecli-ran"
+printf 'samplecli 7.8.9\n'
+EOF
+chmod 755 "$APP_CLI_DIR/samplecli"
+ln -s "$APP_CLI_DIR/samplecli" "$BIN_DIR/samplecli"
+
+# Bundled CLI that opts in with a declared version file: it resolves without
+# being executed, the only way a tool inside a .app can report a version.
+mkdir -p "$TEST_DIR/Sample.app/Contents/Resources/share/vv"
+cat >"$APP_CLI_DIR/declaredcli" <<EOF
+#!/bin/sh
+: >"$TEST_DIR/declaredcli-ran"
+printf 'declaredcli 9.9.9\n'
+EOF
+chmod 755 "$APP_CLI_DIR/declaredcli"
+printf '4.5.6\n' >"$TEST_DIR/Sample.app/Contents/Resources/share/vv/declaredcli"
+ln -s "$APP_CLI_DIR/declaredcli" "$BIN_DIR/declaredcli"
 
 chmod 755 "$BIN_DIR"/*
 
@@ -199,24 +234,48 @@ check_version 'self verified version' "$EXPECTED_VERSION" "$VV" --verified-versi
 check_version 'self version' "$EXPECTED_VERSION" "$VV" --version
 check_rejected 'old -vv rejected' "$VV" -vv
 check_version 'missing tool' '0.0.0' "$VV" vv-missing-test-tool
-check_version 'strict protocol' '3.4.5' env PATH="$BIN_DIR:$PATH" "$VV" strict-tool
-check_version 'malformed protocol fallback' '2.7.0' env PATH="$BIN_DIR:$PATH" "$VV" generic-tool
-check_version 'extra output fallback' '5.6.0' env PATH="$BIN_DIR:$PATH" "$VV" noisy-tool
-check_version 'nonzero protocol fallback' '6.1.0' env PATH="$BIN_DIR:$PATH" "$VV" nonzero-tool
-check_version 'leading zero fallback' '1.2.3' env PATH="$BIN_DIR:$PATH" "$VV" zero-tool
-check_version 'integer build' '4200.0.0' env PATH="$BIN_DIR:$PATH" "$VV" integer-tool
-check_version 'failed command' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" failed-tool
-check_version 'nano compatibility' '8.4.0' env PATH="$BIN_DIR:$PATH" "$VV" nano
-check_version 'pico compatibility' '8.4.0' env PATH="$BIN_DIR:$PATH" "$VV" pico
-check_version 'go compatibility' '1.26.4' env PATH="$BIN_DIR:$PATH" "$VV" go
-check_version 'kubectl compatibility' '1.30.2' env PATH="$BIN_DIR:$PATH" "$VV" kubectl
-check_version 'terraform compatibility' '1.9.8' env PATH="$BIN_DIR:$PATH" "$VV" terraform
-check_version 'Homebrew standard version' '5.0.3' env PATH="$BIN_DIR:$PATH" "$VV" brew
+check_version 'gold protocol wins over ladder' '3.4.5' env PATH="$BIN_DIR:$PATH" "$VV" strict-tool
+check_version 'declared file wins without executing' '5.6.7' "$VV" "$DECL_PREFIX/bin/declared-tool"
+check_version 'declared zero wins without executing' '0.0.0' "$VV" "$DECL_PREFIX/bin/declared-zero-tool"
+check_version 'ladder --version' '2.7.0' env PATH="$BIN_DIR:$PATH" "$VV" generic-tool
+check_version 'ladder -version' '8.4.1' env PATH="$BIN_DIR:$PATH" "$VV" dashversion-tool
+check_version 'ladder version subcommand' '1.2.3' env PATH="$BIN_DIR:$PATH" "$VV" subcommand-tool
+check_version 'ladder -V' '1.9.8' env PATH="$BIN_DIR:$PATH" "$VV" upperflag-tool
+check_version 'ladder -v' '3.4.0' env PATH="$BIN_DIR:$PATH" "$VV" lowerflag-tool
+check_version 'noisy protocol falls to ladder' '5.6.0' env PATH="$BIN_DIR:$PATH" "$VV" noisy-tool
+check_version 'nonzero exit still parsed' '6.1.0' env PATH="$BIN_DIR:$PATH" "$VV" nonzero-tool
+check_version 'leading zeros normalized' '1.2.3' env PATH="$BIN_DIR:$PATH" "$VV" zero-tool
+check_version 'bare integer rejected' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" integer-only-tool
+check_version 'no version is 0.0.0' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" noversion-tool
+check_version 'failed command is 0.0.0' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" failed-tool
+check_version 'timed-out output is rejected' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" timed-tool
+check_version 'brew standard version' '5.0.3' env PATH="$BIN_DIR:$PATH" "$VV" brew
 check_version 'man-db standard version' '2.13.1' env PATH="$BIN_DIR:$PATH" "$VV" man
-check_version 'smerge skips unsafe probe' '2125.0.0' env PATH="$BIN_DIR:$PATH" "$VV" smerge
-check_version 'subl skips unsafe probe' '4200.0.0' env PATH="$BIN_DIR:$PATH" "$VV" subl
-check_version 'subl path uses compatibility' '4200.0.0' "$VV" "$BIN_DIR/subl"
-check_version 'macOS product version' '26.6.1' env PATH="$BIN_DIR:$PATH" "$VV" sw_vers
+check_version 'gui launcher path is dead' '0.0.0' "$VV" "$APP_MACOS_DIR/Sample"
+check_version 'gui launcher via PATH symlink is dead' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" sample-gui
+check_version 'bundled cli without declaration is dead' '0.0.0' "$VV" "$APP_CLI_DIR/samplecli"
+check_version 'bundled cli via PATH symlink is dead' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" samplecli
+check_version 'bundled cli with declared file resolves' '4.5.6' env PATH="$BIN_DIR:$PATH" "$VV" declaredcli
+
+if [ -f "$TEST_DIR/declared-ran" ]; then
+  fail 'declared-tool was executed (a declared version file must resolve without running it)'
+fi
+
+if [ -f "$TEST_DIR/declared-zero-ran" ]; then
+  fail 'declared-zero-tool was executed (0.0.0 is a valid declared version)'
+fi
+
+if [ -f "$TEST_DIR/gui-launched" ]; then
+  fail 'GUI launcher was executed (must never run <App>.app/Contents/MacOS/*)'
+fi
+
+if [ -f "$TEST_DIR/bundlecli-ran" ]; then
+  fail 'bundled CLI inside a .app was executed (must never run a tool inside a .app)'
+fi
+
+if [ -f "$TEST_DIR/declaredcli-ran" ]; then
+  fail 'declared bundled CLI was executed (declared file must resolve without running it)'
+fi
 
 if [ "$FAILURES" -ne 0 ]; then
   printf '%s test(s) failed\n' "$FAILURES" >&2

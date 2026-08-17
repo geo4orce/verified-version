@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VV_VERSION=2.2.0
+VV_VERSION=4.0.0
 VV_TIMEOUT=${VV_TIMEOUT:-5}
 VV_ESC=$(printf '\033')
 
@@ -11,6 +11,8 @@ elif command -v gtimeout >/dev/null 2>&1; then
   VV_TIMEOUT_BIN=gtimeout
 fi
 
+# Execute a tool with stdin closed and stderr folded into stdout, bounded by
+# VV_TIMEOUT when a timeout helper exists. All command execution flows through here.
 vv_run() {
   if [ -n "$VV_TIMEOUT_BIN" ]; then
     "$VV_TIMEOUT_BIN" "$VV_TIMEOUT" "$@" </dev/null 2>&1
@@ -19,42 +21,16 @@ vv_run() {
   fi
 }
 
-vv_extract_generic() {
-  _clean=$(printf '%s\n' "$1" | sed "s/${VV_ESC}\[[0-9;]*[A-Za-z]//g")
-  _v=$(printf '%s\n' "$_clean" | grep -oE '[0-9]+(\.[0-9]+)+' | head -1)
-  if [ -z "$_v" ]; then
-    _v=$(printf '%s\n' "$_clean" | grep -oE '[0-9]+' | head -1)
-  fi
-  printf '%s' "$_v"
+# Extract the first dotted numeric version (X.Y[.Z...]) from noisy output,
+# ignoring ANSI. Bare integers are intentionally rejected: an unadorned number in
+# help text is the main source of false positives when probing unknown flags.
+vv_extract() {
+  printf '%s\n' "$1" | sed "s/${VV_ESC}\[[0-9;]*[A-Za-z]//g" | \
+    grep -oE '[0-9]+(\.[0-9]+)+' | head -1
 }
 
-vv_probe_is_safe() {
-  case $1 in
-    nano|pico|smerge|subl|sw_vers) return 1 ;;
-    *) return 0 ;;
-  esac
-}
-
-vv_run_fallback() {
-  _fallback_bin=$1
-  _fallback_name=$2
-
-  case $_fallback_name in
-    go|terraform) vv_run "$_fallback_bin" version ;;
-    kubectl) vv_run "$_fallback_bin" version --client ;;
-    nano|pico) vv_run "$_fallback_bin" -version ;;
-    sw_vers) vv_run "$_fallback_bin" -productVersion ;;
-    *) vv_run "$_fallback_bin" --version ;;
-  esac
-}
-
-vv_fallback_allows_nonzero() {
-  case $1 in
-    nano|pico) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
+# Normalize one version component to a bare non-negative integer: strip leading
+# zeros; empty or non-numeric becomes 0.
 vv_component() {
   _part=$1
   case $_part in
@@ -69,6 +45,8 @@ vv_component() {
   printf '%s' "${_part:-0}"
 }
 
+# Reduce any extracted value to a strict X.Y.Z: drop a leading v/V, keep at most
+# three components, zero-fill the rest.
 vv_normalize() {
   _n=$1
   _n=${_n#[vV]}
@@ -87,6 +65,7 @@ vv_normalize() {
   printf '%s.%s.%s\n' "$_a" "$_b" "$_c"
 }
 
+# Print help/usage text.
 vv_usage() {
   cat <<EOF
 vv $VV_VERSION
@@ -99,43 +78,86 @@ Usage:
 EOF
 }
 
+# Resolve a path through symlinks (bounded) so application-bundle detection sees
+# the real on-disk location, not a wrapper symlink.
+vv_realpath() {
+  _p=$1
+  _i=0
+  while [ -h "$_p" ] && [ "$_i" -lt 40 ]; do
+    _l=$(readlink "$_p") || break
+    case $_l in
+      /*) _p=$_l ;;
+      *) _p=$(dirname -- "$_p")/$_l ;;
+    esac
+    _i=$((_i + 1))
+  done
+  printf '%s' "$_p"
+}
+
+# Resolve a tool to exactly one X.Y.Z, else 0.0.0. Never errors, never launches a
+# GUI. Order: (1) a declared version file at <prefix>/share/vv/<name> (no
+# execution), (2) the strict --verified-version protocol, (3) a tool-agnostic
+# ladder of common version flags. Tools resolved inside a .app bundle are never
+# executed, so only source (1) can resolve them. No command is special-cased.
 vv_lookup() {
   _bin=$1
 
-  if ! command -v "$_bin" >/dev/null 2>&1; then
-    printf '0.0.0\n'
-    return
-  fi
+  _path=$(command -v "$_bin" 2>/dev/null) || _path=
+  [ -n "$_path" ] || { printf '0.0.0\n'; return; }
+
+  case $_path in
+    /*) _real=$(vv_realpath "$_path") ;;
+    *) _real=$_path ;;
+  esac
 
   _name=${_bin##*/}
-  _name=${_name##*\\}
 
-  if vv_probe_is_safe "$_name"; then
-    if _probe=$(vv_run "$_bin" --verified-version); then
-      _probe_lines=$(printf '%s\n' "$_probe" | wc -l | tr -d ' ')
-      if [ "$_probe_lines" -eq 1 ] && \
-        printf '%s\n' "$_probe" | grep -qE \
-          '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
-        printf '%s\n' "$_probe"
-        return
+  # 1) Declarative: a tool may publish its version at <prefix>/share/vv/<name>,
+  #    mirroring man pages under <prefix>/share/man. Read-only, never executed;
+  #    preferred because it resolves without running the tool at all.
+  case $_real in
+    */bin/"$_name")
+      _decl=${_real%/bin/"$_name"}/share/vv/$_name
+      if [ -f "$_decl" ]; then
+        _declared=$(vv_extract "$(head -1 "$_decl")")
+        if [ -n "$_declared" ]; then
+          vv_normalize "$_declared"
+          return
+        fi
       fi
+      ;;
+  esac
+
+  # Never execute anything inside a macOS application bundle. Even bundled CLI
+  # stubs (e.g. subl) treat an unknown flag as "open a window", so probing risks
+  # a side effect. Inside a bundle only the declarative file above can resolve a
+  # version; otherwise the result is 0.0.0.
+  case $_real in
+    *.app/*) printf '0.0.0\n'; return ;;
+  esac
+
+  # 2) Gold: the strict --verified-version protocol (one clean X.Y.Z, exit zero).
+  if _p=$(vv_run "$_bin" --verified-version); then
+    if [ "$(printf '%s\n' "$_p" | wc -l | tr -d ' ')" -eq 1 ] && \
+      printf '%s\n' "$_p" | grep -qE \
+        '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+      printf '%s\n' "$_p"
+      return
     fi
   fi
 
-  _raw=$(vv_run_fallback "$_bin" "$_name")
-  _rc=$?
+  # 3) Ladder: tool-agnostic version idioms, highest confidence first. The first
+  #    non-timed-out invocation that yields a dotted numeric version wins; other
+  #    non-zero exit statuses are ignored.
+  for _flag in --version -version version -V -v; do
+    _raw=$(vv_run "$_bin" "$_flag")
+    _status=$?
+    [ "$_status" -eq 124 ] && continue
+    _v=$(vv_extract "$_raw")
+    [ -n "$_v" ] && { vv_normalize "$_v"; return; }
+  done
 
-  if [ "$_rc" -eq 124 ] || [ -z "$_raw" ]; then
-    printf '0.0.0\n'
-    return
-  fi
-  if [ "$_rc" -ne 0 ] && ! vv_fallback_allows_nonzero "$_name"; then
-    printf '0.0.0\n'
-    return
-  fi
-
-  _ver=$(vv_extract_generic "$_raw")
-  vv_normalize "$_ver"
+  printf '0.0.0\n'
 }
 
 case ${1:-} in

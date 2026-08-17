@@ -64,29 +64,42 @@ Examples of valid output are `0.0.0`, `1.2.3`, and `4200.0.0`.
 
 ## Lookup behavior
 
-For a command that resolves through `command -v`, `vv`:
+For a command that resolves through `command -v`, `vv` tries these sources in
+order and takes the first that yields a dotted numeric version:
 
-1. Derives the command name, including from an explicit path.
-2. Tries the strict upstream protocol unless the internal compatibility policy
-   marks the command unsafe to probe.
-3. Runs the known fallback command or `--version`.
-4. Extracts a version from the combined standard output and standard error.
-5. Normalizes the extracted value to three numeric components.
+1. A declared version file at `<prefix>/share/vv/<tool>`, read without executing
+   the tool (`<prefix>` is derived from the resolved `.../bin/<tool>` path).
+2. The strict upstream protocol, `<tool> --verified-version`.
+3. A tool-agnostic ladder of common version flags, in order: `--version`,
+   `-version`, `version`, `-V`, `-v`.
+
+From every source `vv` extracts the first dotted numeric sequence and normalizes
+it to three components. Bare integers are not accepted, because an unadorned
+number in help text is the main source of false positives. The same procedure
+applies to every tool; `vv` never names or special-cases a specific command.
 
 If `timeout` or `gtimeout` is available, command execution is limited by
 `VV_TIMEOUT`, which defaults to five seconds. Without either utility, no
 external timeout is enforced.
 
-Non-zero fallback commands are rejected unless the internal compatibility
-policy explicitly allows that command's result.
+Ladder invocations ignore non-zero exit status except timeout status 124: a tool
+that prints a usable version while exiting non-zero is still accepted, but a
+timed-out invocation is rejected. If no source yields a dotted version, the
+result is `0.0.0`.
+
+A command that resolves to a path inside a macOS application bundle (`*.app`) is
+never executed, because even a bundled command-line stub (for example `subl`) may
+open a window on an unknown option. Such a tool resolves only through the
+declarative `share/vv/<tool>` file described above; otherwise it is `0.0.0`.
 
 ## Normalization
 
 Generic extraction:
 
 1. Removes basic ANSI control sequences.
-2. Selects the first dotted numeric sequence.
-3. If none exists, selects the first integer.
+2. Selects the first dotted numeric sequence (`X.Y[.Z...]`).
+3. If none exists, the value is empty and the result is `0.0.0`. A bare integer
+   with no dot is not treated as a version.
 
 Normalization then:
 
@@ -102,21 +115,23 @@ Examples:
 | --- | --- |
 | `v1.2.3` | `1.2.3` |
 | `2.7` | `2.7.0` |
-| `4200` | `4200.0.0` |
+| `4200` (no dot) | `0.0.0` |
 | `01.002.0003` | `1.2.3` |
 | no version | `0.0.0` |
 
-## Compatibility exceptions
+## Compatibility
 
-Known command exceptions are maintained in three internal tables in `vv`:
+`vv` keeps no per-command exceptions. A tool becomes fully compatible either by
+shipping a `share/vv/<tool>` version file (declarative, no execution) or by
+implementing `--verified-version`. Failing that, the generic flag ladder is
+tried. A tool becomes compatible by declaring or reporting a dotted version;
+anything else is `0.0.0`. `vv` never adapts its invocation to a specific tool.
 
-- Commands that must not receive the strict probe because an unknown option can
-  cause side effects.
-- Commands that use fallback arguments other than `--version`.
-- Commands whose useful fallback output accompanies a non-zero exit.
-
-There are no user recipes, sourced configuration files, or configurable parser
-functions. Explicit tool paths use the policy for their final command name.
+The sole built-in guard is generic: a command that resolves inside a macOS
+application bundle (`*.app`) is never executed, because bundled launchers and
+stubs may open a window on an unknown option. Inside a bundle, only the
+declarative `share/vv/<tool>` file can resolve a version. There are no user
+recipes, sourced configuration files, or configurable parser functions.
 
 ## Website contract
 
@@ -155,7 +170,8 @@ A release is acceptable when:
 
 - The shell suite passes on Ubuntu and macOS.
 - Shellcheck passes for `vv` and `tests/test.sh`.
-- Every compatibility exception has a representative fixture.
+- The generic protocol and the application-bundle rule have representative
+  fixtures.
 - Version output remains one strict line with the documented exit status.
 - The website has no horizontal overflow or console errors at desktop and
   mobile sizes.
