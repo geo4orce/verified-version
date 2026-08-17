@@ -8,8 +8,9 @@ This repository contains two deliberately separate artifacts for one product:
    compatibility behavior, tests, manual, completions, and release number live
    in this repository.
 2. The verified-version.org website is a static explanation and installation
-   page. It has HTML, CSS, and one small clipboard script. It is not part of the
-   command at runtime and has no independent package version.
+   page. Its production code has HTML, CSS, and one small clipboard script. It
+   is not part of the command at runtime and has no independent package version.
+   The dependency-free Node.js server under `tools/` is for local preview only.
 
 Keep their implementation concerns separate:
 
@@ -80,6 +81,7 @@ declarative files, strict protocol, and application-bundle guard.
 - `index.html`: production website markup.
 - `styles.css`: all production and 404-page styling.
 - `site.js`: progressive enhancement for the install-command copy button only.
+- `Makefile` and `tools/serve.mjs`: dependency-free local website preview.
 - `404.html`, `favicon.svg`, `apple-touch-icon.png`, and `og-image.png`:
   static website support files.
 - `SPEC.md`: normative product and behavior contract.
@@ -134,14 +136,35 @@ The website is the static repository root. Its production files are
 `index.html`, `404.html`, `styles.css`, `favicon.svg`,
 `apple-touch-icon.png`, `og-image.png`, and `site.js`. Keep it semantic,
 responsive, and free of a build step. Keep all styling in `styles.css`.
-JavaScript is limited to the progressively enhanced copy button; core content
-and navigation must work without it. Preserve canonical and social metadata,
-the meta CSP, focus visibility, readable contrast, and no horizontal overflow.
+Production JavaScript is limited to the progressively enhanced copy button;
+core content and navigation must work without it. Preserve canonical and social
+metadata, the meta CSP, focus visibility, readable contrast, and no horizontal
+overflow.
 
 `main` automatically deploys the production site through DigitalOcean App
 Platform. Application code and release details belong here. Use the
 `infra` repository only for hosting, domain, DNS, redirect, TLS, or provider
 configuration changes.
+
+Preview the site locally from the repository root:
+
+```sh
+make serve
+make serve PORT=3000
+```
+
+The preview server requires Node.js, installs no packages, binds only to
+localhost, disables browser caching, and is not part of production deployment.
+
+Validate the production HTML with the pinned, transient linter:
+
+```sh
+make lint
+```
+
+Keep HTML human-readable. Prefer structural layout over whitespace-sensitive
+`<pre>` formatting when markup needs syntax highlighting or aligned columns.
+Do not run Prettier over these files.
 
 ## Documentation ownership
 
