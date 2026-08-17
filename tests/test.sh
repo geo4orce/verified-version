@@ -6,16 +6,14 @@ VV=$ROOT/vv
 TMP_ROOT=${TMPDIR:-/tmp}
 TEST_DIR=$TMP_ROOT/vv-test-$$
 BIN_DIR=$TEST_DIR/bin
-RECIPE_DIR=$TEST_DIR/recipes
+EXPECTED_VERSION=$(cat "$ROOT/VERSION")
 FAILURES=0
 
 cleanup() {
   rm -rf "$TEST_DIR"
 }
 trap cleanup EXIT HUP INT TERM
-mkdir -p "$BIN_DIR" "$RECIPE_DIR"
-cp "$ROOT"/recipes/go "$ROOT"/recipes/kubectl "$ROOT"/recipes/nano \
-  "$ROOT"/recipes/pico "$ROOT"/recipes/terraform "$RECIPE_DIR/"
+mkdir -p "$BIN_DIR"
 
 fail() {
   printf 'not ok - %s\n' "$1"
@@ -132,19 +130,6 @@ EOF
 
 cp "$BIN_DIR/nano" "$BIN_DIR/pico"
 
-cat >"$BIN_DIR/recipe-protocol-tool" <<'EOF'
-#!/bin/sh
-case ${1:-} in
-  --verified-version) printf '7.8.9\n' ;;
-  --version) printf 'recipe-protocol-tool 1.2.3\n' ;;
-  *) exit 1 ;;
-esac
-EOF
-
-cat >"$RECIPE_DIR/recipe-protocol-tool" <<'EOF'
-VV_CMD="--version"
-EOF
-
 cat >"$BIN_DIR/go" <<'EOF'
 #!/bin/sh
 [ "${1:-}" = version ] || exit 1
@@ -163,10 +148,55 @@ cat >"$BIN_DIR/terraform" <<'EOF'
 printf 'Terraform v1.9.8\n'
 EOF
 
+cat >"$BIN_DIR/brew" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) exit 1 ;;
+  --version) printf 'Homebrew 5.0.3\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/man" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) exit 1 ;;
+  --version) printf 'man 2.13.1\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/smerge" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) printf '9.9.9\n' ;;
+  --version) printf 'Sublime Merge Build 2125\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/subl" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) printf '9.9.9\n' ;;
+  --version) printf 'Sublime Text Build 4200\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
+cat >"$BIN_DIR/sw_vers" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+  --verified-version) printf '9.9.9\n' ;;
+  -productVersion) printf '26.6.1\n' ;;
+  *) exit 1 ;;
+esac
+EOF
+
 chmod 755 "$BIN_DIR"/*
 
-check_version 'self verified version' '2.1.0' "$VV" --verified-version
-check_version 'self version' '2.1.0' "$VV" --version
+check_version 'self verified version' "$EXPECTED_VERSION" "$VV" --verified-version
+check_version 'self version' "$EXPECTED_VERSION" "$VV" --version
 check_rejected 'old -vv rejected' "$VV" -vv
 check_version 'missing tool' '0.0.0' "$VV" vv-missing-test-tool
 check_version 'strict protocol' '3.4.5' env PATH="$BIN_DIR:$PATH" "$VV" strict-tool
@@ -176,12 +206,17 @@ check_version 'nonzero protocol fallback' '6.1.0' env PATH="$BIN_DIR:$PATH" "$VV
 check_version 'leading zero fallback' '1.2.3' env PATH="$BIN_DIR:$PATH" "$VV" zero-tool
 check_version 'integer build' '4200.0.0' env PATH="$BIN_DIR:$PATH" "$VV" integer-tool
 check_version 'failed command' '0.0.0' env PATH="$BIN_DIR:$PATH" "$VV" failed-tool
-check_version 'recipe skips probe' '8.4.0' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" nano
-check_version 'pico recipe' '8.4.0' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" pico
-check_version 'upstream protocol precedes recipe' '7.8.9' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" recipe-protocol-tool
-check_version 'go recipe' '1.26.4' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" go
-check_version 'kubectl recipe' '1.30.2' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" kubectl
-check_version 'terraform recipe' '1.9.8' env PATH="$BIN_DIR:$PATH" VV_RECIPES="$RECIPE_DIR" "$VV" terraform
+check_version 'nano compatibility' '8.4.0' env PATH="$BIN_DIR:$PATH" "$VV" nano
+check_version 'pico compatibility' '8.4.0' env PATH="$BIN_DIR:$PATH" "$VV" pico
+check_version 'go compatibility' '1.26.4' env PATH="$BIN_DIR:$PATH" "$VV" go
+check_version 'kubectl compatibility' '1.30.2' env PATH="$BIN_DIR:$PATH" "$VV" kubectl
+check_version 'terraform compatibility' '1.9.8' env PATH="$BIN_DIR:$PATH" "$VV" terraform
+check_version 'Homebrew standard version' '5.0.3' env PATH="$BIN_DIR:$PATH" "$VV" brew
+check_version 'man-db standard version' '2.13.1' env PATH="$BIN_DIR:$PATH" "$VV" man
+check_version 'smerge skips unsafe probe' '2125.0.0' env PATH="$BIN_DIR:$PATH" "$VV" smerge
+check_version 'subl skips unsafe probe' '4200.0.0' env PATH="$BIN_DIR:$PATH" "$VV" subl
+check_version 'subl path uses compatibility' '4200.0.0' "$VV" "$BIN_DIR/subl"
+check_version 'macOS product version' '26.6.1' env PATH="$BIN_DIR:$PATH" "$VV" sw_vers
 
 if [ "$FAILURES" -ne 0 ]; then
   printf '%s test(s) failed\n' "$FAILURES" >&2

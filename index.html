@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#182848">
   <link rel="canonical" href="https://verified-version.org/">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
 
   <meta property="og:type" content="website">
   <meta property="og:title" content="vv - verified version">
@@ -16,230 +16,9 @@
   <meta property="og:url" content="https://verified-version.org/">
   <meta property="og:site_name" content="verified version">
   <meta name="twitter:card" content="summary">
-
-  <style>
-    :root {
-      color-scheme: dark;
-      --bg1: #4b6cb7;
-      --bg2: #182848;
-      --gray: #999;
-      --ink: #fff;
-      --mono: "SF Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      --muted: rgba(255, 255, 255, 0.72);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      min-height: 100vh;
-      min-height: 100svh;
-      display: grid;
-      place-items: center;
-      padding: clamp(0.85rem, 3vw, 1.5rem);
-      color: var(--ink);
-      text-align: center;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
-    }
-
-    main {
-      width: 100%;
-      max-width: 560px;
-      display: grid;
-      justify-items: center;
-      gap: clamp(0.7rem, 2vh, 1rem);
-    }
-
-    h1 {
-      font-size: clamp(4.5rem, 18vw, 7.5rem);
-      font-weight: 800;
-      line-height: 0.82;
-      letter-spacing: 0.06em;
-    }
-
-    .tagline,
-    .contract {
-      color: var(--muted);
-    }
-
-    .tagline {
-      font-size: clamp(0.95rem, 3.5vw, 1.15rem);
-      line-height: 1.3;
-    }
-
-    .tagline strong,
-    .tagline span {
-      display: block;
-    }
-
-    .tagline strong {
-      margin-bottom: 0.2rem;
-      color: var(--ink);
-      font-size: 1.05em;
-      font-weight: 700;
-    }
-
-    .code {
-      width: 100%;
-      padding: 0.8rem 1rem;
-      overflow-x: auto;
-      border-radius: 8px;
-      background: rgba(0, 0, 0, 0.28);
-      text-align: left;
-      font-family: var(--mono);
-      font-size: clamp(0.78rem, 3vw, 0.9rem);
-      line-height: 1.45;
-    }
-
-    .prompt {
-      color: var(--muted);
-    }
-
-    .output {
-      margin: 0 1rem 0.65rem;
-      color: #7ef0b0;
-    }
-
-    .output:last-child {
-      margin-bottom: 0;
-    }
-
-    .contract {
-      max-width: 470px;
-      display: grid;
-      gap: 0.55rem;
-      font-size: clamp(0.8rem, 2.8vw, 0.9rem);
-      font-weight: 300;
-      line-height: 1.45;
-    }
-
-    .disclosures {
-      width: min(520px, 100%);
-      display: grid;
-      gap: 0.55rem;
-    }
-
-    details {
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.16);
-      text-align: left;
-    }
-
-    summary {
-      min-height: 44px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 1rem;
-      padding: 0.65rem 0.9rem;
-      cursor: pointer;
-      list-style: none;
-      font-size: 0.92rem;
-      font-weight: 700;
-      line-height: 1.25;
-    }
-
-    summary::-webkit-details-marker {
-      display: none;
-    }
-
-    summary::after {
-      content: "+";
-      color: var(--muted);
-      font-family: var(--mono);
-      font-size: 1.15rem;
-      font-weight: 400;
-    }
-
-    details[open] summary {
-      border-bottom: 1px solid rgba(255, 255, 255, 0.14);
-    }
-
-    details[open] summary::after {
-      content: "−";
-    }
-
-    summary:hover,
-    summary:focus-visible {
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    summary:focus-visible {
-      outline: 2px solid var(--ink);
-      outline-offset: -3px;
-    }
-
-    .panel-body {
-      padding: 0.75rem;
-    }
-
-    .install-code {
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-    }
-
-    .install-note {
-      margin-top: 0.55rem;
-      color: var(--muted);
-      font-size: 0.78rem;
-      line-height: 1.4;
-    }
-
-    code {
-      color: var(--ink);
-      font-family: var(--mono);
-    }
-
-    footer {
-      padding: 0 0.5rem;
-      color: var(--gray);
-      font-size: 0.72rem;
-      line-height: 1.4;
-    }
-
-    a {
-      color: inherit;
-      text-underline-offset: 0.2em;
-    }
-
-    a:hover {
-      color: var(--ink);
-    }
-
-    a:focus-visible {
-      outline: 2px solid var(--ink);
-      outline-offset: 4px;
-      border-radius: 2px;
-    }
-
-    @media (max-height: 680px) {
-      body {
-        padding-block: 0.65rem;
-      }
-
-      main {
-        gap: 0.6rem;
-      }
-
-      h1 {
-        font-size: 4.25rem;
-      }
-
-      .contract {
-        gap: 0.4rem;
-        font-size: 0.78rem;
-      }
-    }
-  </style>
 </head>
-<body>
-  <main>
+<body class="home-page">
+  <main class="home-main">
     <h1>vv</h1>
     <p class="tagline">
       <strong>Verified Version</strong>
@@ -251,9 +30,9 @@
       <p>Missing or unparseable becomes <code>0.0.0</code>. POSIX sh, no build.</p>
     </div>
 
-    <div class="disclosures">
-      <details name="vv-info">
-        <summary>Install with Homebrew</summary>
+    <div class="info-panels">
+      <section class="info-panel" aria-labelledby="install-heading">
+        <h2 class="info-heading" id="install-heading">Install with Homebrew</h2>
         <div class="panel-body">
           <pre class="code install-code"><code><span class="prompt">$</span> brew install geo4orce/tap/vv</code></pre>
           <p class="install-note">
@@ -261,10 +40,10 @@
             <a href="https://github.com/geo4orce/verified-version">clone it from GitHub</a>.
           </p>
         </div>
-      </details>
+      </section>
 
-      <details name="vv-info">
-        <summary>See examples</summary>
+      <section class="info-panel" aria-labelledby="examples-heading">
+        <h2 class="info-heading" id="examples-heading">Examples</h2>
         <div class="panel-body">
           <div class="code" role="group" aria-label="Example vv commands and output">
             <div><span class="prompt">$</span> vv git</div>
@@ -275,7 +54,7 @@
             <div class="output">0.0.0</div>
           </div>
         </div>
-      </details>
+      </section>
     </div>
 
     <footer>

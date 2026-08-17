@@ -1,19 +1,8 @@
 #!/bin/sh
 
-VV_VERSION=2.1.0
+VV_VERSION=2.2.0
 VV_TIMEOUT=${VV_TIMEOUT:-5}
 VV_ESC=$(printf '\033')
-
-VV_SELF=$0
-VV_DIR=$(CDPATH='' cd -- "$(dirname -- "$VV_SELF")" 2>/dev/null && pwd) || VV_DIR=.
-
-if [ -z "${VV_RECIPES:-}" ]; then
-  if [ -d "$VV_DIR/recipes" ]; then
-    VV_RECIPES=$VV_DIR/recipes
-  else
-    VV_RECIPES=$VV_DIR/../share/vv/recipes
-  fi
-fi
 
 VV_TIMEOUT_BIN=
 if command -v timeout >/dev/null 2>&1; then
@@ -32,18 +21,38 @@ vv_run() {
 
 vv_extract_generic() {
   _clean=$(printf '%s\n' "$1" | sed "s/${VV_ESC}\[[0-9;]*[A-Za-z]//g")
-  if [ -n "$VV_LINE" ]; then
-    _clean=$(printf '%s\n' "$_clean" | sed -n "${VV_LINE}p")
-  fi
-  if [ -n "$VV_GREP" ]; then
-    printf '%s\n' "$_clean" | grep -oE "$VV_GREP" | head -1
-    return
-  fi
   _v=$(printf '%s\n' "$_clean" | grep -oE '[0-9]+(\.[0-9]+)+' | head -1)
   if [ -z "$_v" ]; then
     _v=$(printf '%s\n' "$_clean" | grep -oE '[0-9]+' | head -1)
   fi
   printf '%s' "$_v"
+}
+
+vv_probe_is_safe() {
+  case $1 in
+    nano|pico|smerge|subl|sw_vers) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+vv_run_fallback() {
+  _fallback_bin=$1
+  _fallback_name=$2
+
+  case $_fallback_name in
+    go|terraform) vv_run "$_fallback_bin" version ;;
+    kubectl) vv_run "$_fallback_bin" version --client ;;
+    nano|pico) vv_run "$_fallback_bin" -version ;;
+    sw_vers) vv_run "$_fallback_bin" -productVersion ;;
+    *) vv_run "$_fallback_bin" --version ;;
+  esac
+}
+
+vv_fallback_allows_nonzero() {
+  case $1 in
+    nano|pico) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 vv_component() {
@@ -98,19 +107,10 @@ vv_lookup() {
     return
   fi
 
-  VV_CMD=--version
-  VV_LINE=
-  VV_GREP=
-  VV_SKIP_PROBE=0
-  VV_ALLOW_NONZERO=0
-  unset -f vv_extract 2>/dev/null
+  _name=${_bin##*/}
+  _name=${_name##*\\}
 
-  if [ -f "$VV_RECIPES/$_bin" ]; then
-    # shellcheck disable=SC1090
-    . "$VV_RECIPES/$_bin"
-  fi
-
-  if [ "$VV_SKIP_PROBE" != 1 ]; then
+  if vv_probe_is_safe "$_name"; then
     if _probe=$(vv_run "$_bin" --verified-version); then
       _probe_lines=$(printf '%s\n' "$_probe" | wc -l | tr -d ' ')
       if [ "$_probe_lines" -eq 1 ] && \
@@ -122,26 +122,19 @@ vv_lookup() {
     fi
   fi
 
-  # Word splitting is intentional for recipe commands such as "version --client".
-  # shellcheck disable=SC2086
-  _raw=$(vv_run "$_bin" $VV_CMD)
+  _raw=$(vv_run_fallback "$_bin" "$_name")
   _rc=$?
 
   if [ "$_rc" -eq 124 ] || [ -z "$_raw" ]; then
     printf '0.0.0\n'
     return
   fi
-  if [ "$_rc" -ne 0 ] && [ "$VV_ALLOW_NONZERO" != 1 ]; then
+  if [ "$_rc" -ne 0 ] && ! vv_fallback_allows_nonzero "$_name"; then
     printf '0.0.0\n'
     return
   fi
 
-  if command -v vv_extract >/dev/null 2>&1; then
-    _ver=$(printf '%s\n' "$_raw" | vv_extract)
-  else
-    _ver=$(vv_extract_generic "$_raw")
-  fi
-
+  _ver=$(vv_extract_generic "$_raw")
   vv_normalize "$_ver"
 }
 

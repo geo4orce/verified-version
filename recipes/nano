@@ -1,4 +1,0 @@
-# GNU nano uses single-dash -version, exits 1, and may ignore unknown flags.
-VV_CMD="-version"
-VV_SKIP_PROBE=1
-VV_ALLOW_NONZERO=1

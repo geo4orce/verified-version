@@ -1,4 +1,4 @@
-.Dd August 9, 2026
+.Dd August 17, 2026
 .Dt VV 1
 .Os
 .Sh NAME
@@ -20,9 +20,10 @@ Missing or unparseable versions produce
 .Li 0.0.0 .
 Normal lookups always exit zero.
 .Pp
-Lookup order is a valid upstream
+Lookup prefers a valid upstream
 .Fl -verified-version
-response, a trusted recipe, then
+response unless the command is known to handle unknown options unsafely.
+It then uses a known compatibility fallback or
 .Ar tool
 .Fl -version .
 .Sh OPTIONS
@@ -35,12 +36,16 @@ version.
 Print brief help.
 .El
 .Sh ENVIRONMENT
-.Bl -tag -width VV_RECIPES
-.It Ev VV_RECIPES
-Recipe directory override.
+.Bl -tag -width VV_TIMEOUT
 .It Ev VV_TIMEOUT
 Probe timeout in seconds. Default: 5.
 .El
+.Sh COMPATIBILITY
+Known command exceptions are built into
+.Nm .
+They control whether probing is safe, which fallback arguments are used, and
+whether useful output may accompany a non-zero exit.
+There are no user recipe or parser configuration files.
 .Sh EXIT STATUS
 The utility exits zero for every normal result, including missing or
 unparseable tools. Invalid options exit two. Any other non-zero status

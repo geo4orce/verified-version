@@ -22,9 +22,3 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - run: shellcheck -s sh vv tests/test.sh
-
-  homebrew:
-    runs-on: macos-latest
-    steps:
-      - run: brew install geo4orce/tap/vv
-      - run: brew test geo4orce/tap/vv
