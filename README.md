@@ -1,14 +1,10 @@
-# vv
-
-**Verified Version**
+# Verified Version
 
 One strict SemVer triple, always.
 
 Give it a tool. Get strict `X.Y.Z`.
 
-Missing or unparseable becomes `0.0.0`.
-
-POSIX sh. No build.
+Missing or unparseable? Becomes `0.0.0`.
 
 ## Install
 
@@ -24,4 +20,27 @@ $ vv node      26.6.0
 $ vv nope-xyz  0.0.0
 ```
 
-© 2026 [Web-Opt.com LLC](https://web-opt.com/) · [MIT License](https://github.com/geo4orce/verified-version/blob/main/LICENSE) · [GitHub](https://github.com/geo4orce/verified-version)
+POSIX sh. No build.
+
+## Local preview
+
+```console
+$ make serve
+```
+
+Open <http://localhost:8000>. To use another port, run
+`make serve PORT=3000`. The development server uses Node.js, has no package
+dependencies, and does not participate in production deployment.
+
+Validate both HTML pages with:
+
+```console
+$ make lint
+```
+
+The linter is pinned and runs through `npx`, so no `package.json` or local
+dependency installation is required.
+
+## Support
+
+geo@web-opt.com

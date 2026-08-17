@@ -178,8 +178,22 @@ code {
 }
 
 .examples {
+  display: grid;
   padding: 0.75rem 1rem 0.9rem;
   overflow-x: auto;
+}
+
+.example-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  column-gap: 1rem;
+}
+
+.example-line code,
+.example-line samp {
+  font: inherit;
+  white-space: nowrap;
 }
 
 footer {

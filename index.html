@@ -29,14 +29,11 @@
   <main class="home-main">
     <h1>vv</h1>
     <p class="tagline">
-      <strong>Verified Version</strong>
-      <span>One strict SemVer triple, always.</span>
+      <strong>Verified Version 4.0.0</strong>
     </p>
 
     <div class="contract">
-      <p>Give it a tool. Get strict <code>X.Y.Z</code>.</p>
-      <p>Missing or unparseable becomes <code>0.0.0</code>.</p>
-      <p>POSIX sh. No build.</p>
+      <p>One strict SemVer triple, always.</p>
     </div>
 
     <div class="info-panels">
@@ -47,13 +44,35 @@
           <button class="copy-button" type="button" data-copy-target="install-command" aria-live="polite" hidden>Copy</button>
         </div>
       </section>
+    </div>
 
+    <div class="contract">
+      <p>Give it a tool. Get strict <code>X.Y.Z</code>.</p>
+      <p>Missing or unparseable? Becomes <code>0.0.0</code>.</p>
+    </div>
+
+    <div class="info-panels">
       <section class="info-panel" aria-labelledby="examples-heading">
         <h2 class="info-heading" id="examples-heading">Examples</h2>
-        <pre class="examples"><code><span class="prompt">$</span> vv git       <span class="output">2.55.0</span>
-<span class="prompt">$</span> vv node      <span class="output">26.6.0</span>
-<span class="prompt">$</span> vv nope-xyz  <span class="output">0.0.0</span></code></pre>
+        <div class="examples">
+          <div class="example-line">
+            <code><span class="prompt">$</span> vv git</code>
+            <samp class="output">2.55.0</samp>
+          </div>
+          <div class="example-line">
+            <code><span class="prompt">$</span> vv node</code>
+            <samp class="output">26.6.0</samp>
+          </div>
+          <div class="example-line">
+            <code><span class="prompt">$</span> vv nope-xyz</code>
+            <samp class="output">0.0.0</samp>
+          </div>
+        </div>
       </section>
+    </div>
+
+    <div class="contract">
+      <p>POSIX sh. No build.</p>
     </div>
 
     <footer>
