@@ -121,10 +121,13 @@ For a version change:
 4. Commit the release state and create the matching `vX.Y.Z` Git tag.
 5. After the tag exists, update the external Homebrew tap formula URL,
    checksum, version assertion, and installed file list.
+6. Verify the tap formula installs and its test passes.
 
 The Git tag releases the CLI source. The separate Homebrew tap publishes that
 release to `brew`; pushing this repository alone does not update the formula.
 The formula should install only `vv`, the manual, and shell completions.
+Do not report a CLI release complete until the formula update is on the tap's
+default branch and `brew install geo4orce/tap/vv` resolves to the new version.
 
 ## Website and deployment
 
