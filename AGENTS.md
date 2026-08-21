@@ -5,17 +5,15 @@
 This repository contains two deliberately separate artifacts for one product:
 
 1. The `vv` command-line tool is installed and versioned software. Its code,
-   compatibility behavior, tests, manual, completions, and release number live
-   in this repository.
+   behavior, tests, manual, completions, and release number live here.
 2. The verified-version.org website is a static explanation and installation
-   page. Its production code has HTML, CSS, and one small clipboard script. It
-   is not part of the command at runtime and has no independent package version.
-   The dependency-free Node.js server under `tools/` is for local preview only.
+   page. It has no independent package version. The dependency-free Node.js
+   server under `tools/` is for local preview only.
 
 Keep their implementation concerns separate:
 
-- A CLI behavior change belongs in `vv`, `tests/test.sh`, `SPEC.md`, and when
-  user-facing, `man/vv.1`.
+- A CLI behavior change belongs in `vv`, `tests/test.sh`, and, when
+  user-facing, `man/vv.1` or `CONTRIBUTING.md`.
 - A website change belongs in `index.html`, `404.html`, `styles.css`,
   `site.js`, or a static image asset.
 - `VERSION` and `VV_VERSION` version the CLI, not the website.
@@ -23,86 +21,91 @@ Keep their implementation concerns separate:
 - Website deployment must not install or execute the CLI.
 - Homebrew packaging must not include website files.
 
-They stay together while the website remains a tiny static front door for the
-tool. Consider splitting only if the website gains a build system, backend,
+Keep the artifacts together while the website remains a tiny static front
+door. Consider splitting only if it gains a build system, backend,
 dependencies, or an independent release cadence.
 
-## Technical contract
+## CLI contract
 
-`vv` is a small POSIX `sh` command for macOS and Linux. It accepts a tool
-name and emits exactly one normalized numeric version line. There is no build
-step, runtime service, database, or network lookup.
+`vv` is a small POSIX `sh` command for macOS and Linux. A normal lookup accepts
+one tool name and must:
 
-These invariants must remain true for normal lookups:
+- Write exactly one `X.Y.Z` line to standard output.
+- Produce `0.0.0` for missing, failed, timed-out, or unparseable tools.
+- Exit zero and produce no separate diagnostic output.
+- Run commands without prompts or standard input.
 
-- Output is exactly one `X.Y.Z` line.
-- Missing, failed, or unparseable tools produce `0.0.0`.
-- Lookup results exit zero.
-- Invalid `vv` options exit two.
-- Commands run without prompts or standard input.
+Invalid `vv` options exit two. Informational commands such as
+`--quarantine` may emit explanatory text but exit zero.
 
-The detailed normative behavior is in `SPEC.md`.
+The implementation is the single `vv` shell script. Its lookup order is:
 
-## Lookup algorithm
-
-The implementation is the single `vv` shell script.
-
-1. Resolve the requested command with `command -v`.
-2. Resolve symlinks and derive the command name, including from an explicit
-   path.
-3. Read `<prefix>/share/vv/<tool>` when the resolved command lives at
-   `<prefix>/bin/<tool>` and the declaration contains a dotted version.
-4. Return `0.0.0` without executing a command resolved inside a macOS `.app`
-   bundle when no valid declaration exists.
+1. Resolve the requested command with `command -v`, then follow symlinks.
+2. Read a trusted `<prefix>/share/vv/<tool>` declaration when the resolved
+   path is `<prefix>/bin/<tool>`. Declarations may contain a dotted version or
+   a bare integer and always win without executing the tool.
+3. Apply an exact quarantine entry by invoked name or resolved binary name.
+4. For a non-quarantined command inside a macOS `.app`, read the nearest
+   enclosing `Info.plist` without executing the command. Prefer
+   `CFBundleShortVersionString`, then `CFBundleVersion`.
 5. Try `tool --verified-version` and accept only one strict numeric triple.
-6. Try the generic flag ladder `--version`, `-version`, `version`, `-V`, and
-   `-v`, taking the first dotted version even when the command exits non-zero.
-7. Reject bare integers, empty output, and timed-out invocations, then normalize
-   the first dotted version-like value.
+6. Try `--version`, `-version`, `version`, `-V`, and `-v`, accepting the first
+   dotted numeric version even when the command exits non-zero.
+7. Reject bare integers from executable output, empty output, and timed-out
+   invocations, then normalize the first accepted value to three components.
 
-## Compatibility policy
+## Compatibility and quarantine
 
-`vv` has no per-command compatibility exceptions, sourced recipes, or user
-configuration files. Every tool follows the same declarative file, strict
-protocol, and generic flag ladder. Compatibility should be added upstream by
-shipping `<prefix>/share/vv/<tool>` or implementing `--verified-version`.
+Prefer upstream `--verified-version` support. A safe conventional `--version`
+is also compatible when the normal executable path is reachable. A trusted
+`share/vv/<tool>` declaration is the non-executing option and works before all
+other sources.
 
-The only execution guard is structural: never probe a command resolved inside
-a macOS `.app` bundle. Include representative fixtures for the generic ladder,
-declarative files, strict protocol, and application-bundle guard.
+The only per-tool state is the small inline quarantine registry in `vv`. Each
+row is `name|action|reason` and is queryable with `vv --quarantine [tool]`:
+
+- `flag=<x>` runs only one known-safe flag and never the generic ladder.
+- `exec` runs the protocol and ladder despite the `.app` execution guard.
+
+Keep entries narrow and documented. A `flag=` entry can leave quarantine when
+the tool implements `--verified-version`, makes conventional `--version` safe,
+or ships a declaration. An app-bundled `exec` entry needs a declaration,
+authoritative bundle metadata, or a CLI installed outside the bundle before
+the execution exception can be removed.
+
+Do not add sourced recipes, user configuration, parser hooks, or other
+per-command tables. Put public compatibility guidance in `CONTRIBUTING.md`.
 
 ## Repository map
 
 - `vv`: complete command implementation.
 - `VERSION`: release version used to check the embedded version.
-- `tests/test.sh`: executable contract and protocol fixtures.
+- `tests/test.sh`: executable CLI contract and protocol fixtures.
 - `man/vv.1`: complete installed command reference.
 - `completions/`: Bash, Zsh, and Fish completions.
-- `index.html`: production website markup.
-- `styles.css`: all production and 404-page styling.
-- `site.js`: progressive enhancement for the install-command copy button only.
+- `README.md`: short public introduction matching the website.
+- `CONTRIBUTING.md`: public compatibility and contribution guidance.
+- `index.html`, `404.html`, `styles.css`, `favicon.svg`,
+  `apple-touch-icon.png`, `og-image.png`, and `site.js`: production website.
 - `Makefile` and `tools/serve.mjs`: dependency-free local website preview.
-- `404.html`, `favicon.svg`, `apple-touch-icon.png`, and `og-image.png`:
-  static website support files.
-- `SPEC.md`: normative product and behavior contract.
-- `README.md`: deliberately short public introduction matching the website.
-- `CONTRIBUTING.md`: human contribution guidance.
 
-There is intentionally no `CHANGELOG.md`. Git tags and commit history are the
-release history.
+There is intentionally no `SPEC.md` or `CHANGELOG.md`. The command, tests, and
+manual own CLI behavior; Git tags and commit history own release history.
 
 ## Tests
 
-Run:
+Run the complete CLI suite:
 
 ```sh
 sh tests/test.sh
 shellcheck -s sh vv tests/test.sh
 ```
 
-Every behavior change needs a focused fixture and assertion. Tests must verify
-the one-line output and exit status contract, including that declarative and
-application-bundle cases do not execute the target command.
+Every behavior change needs a focused fixture and assertion. Verify the
+one-line output and exit-status contract, including whether declarative,
+application-bundle, and quarantine cases execute the target. `Info.plist`
+fixtures require macOS; quarantine behavior and non-execution guards run on
+both supported operating systems.
 
 Keep shell syntax portable. Do not add Bash-only syntax.
 
@@ -111,14 +114,15 @@ Keep shell syntax portable. Do not add Bash-only syntax.
 Use semantic versioning for `vv` itself:
 
 - Patch: fixes that preserve the public interface.
-- Minor: backward-compatible commands or compatibility features.
+- Minor: backward-compatible commands or compatibility features, including
+  quarantine registry changes.
 - Major: incompatible output, exit-status, or lookup behavior.
 
 For a version change:
 
 1. Update `VERSION` and `VV_VERSION` in `vv`.
 2. Update tests and the man-page date when behavior or documentation changes.
-3. Run the complete test and shellcheck suite.
+3. Run the complete test and shellcheck suite on Linux and macOS.
 4. Commit the release state and create the matching `vX.Y.Z` Git tag.
 5. After the tag exists, update the external Homebrew tap formula URL,
    checksum, version assertion, and installed file list.
@@ -126,53 +130,49 @@ For a version change:
 
 The Git tag releases the CLI source. The separate Homebrew tap publishes that
 release to `brew`; pushing this repository alone does not update the formula.
-The formula should install only `vv`, the manual, and shell completions.
-Do not report a CLI release complete until the formula update is on the tap's
-default branch and `brew install geo4orce/tap/vv` resolves to the new version.
+The formula installs only `vv`, the manual, and shell completions. Do not
+report a CLI release complete until the formula update is on the tap's default
+branch and `brew install geo4orce/tap/vv` resolves to the new version.
 
 ## Website and deployment
 
-The website is the static repository root. Its production files are
-`index.html`, `404.html`, `styles.css`, `favicon.svg`,
-`apple-touch-icon.png`, `og-image.png`, and `site.js`. Keep it semantic,
-responsive, and free of a build step. Keep all styling in `styles.css`.
-Production JavaScript is limited to the progressively enhanced copy button;
-core content and navigation must work without it. Preserve canonical and social
-metadata, the meta CSP, focus visibility, readable contrast, and no horizontal
-overflow.
+The website is the static repository root. Keep it semantic, responsive, and
+free of a build step. Keep all styling in `styles.css`. Production JavaScript
+is limited to the progressively enhanced copy button; core content and
+navigation must work without it. Preserve canonical and social metadata, the
+meta CSP, focus visibility, readable contrast, and no horizontal overflow.
 
-`main` automatically deploys the production site through DigitalOcean App
-Platform. Application code and release details belong here. Use the
-`infra` repository only for hosting, domain, DNS, redirect, TLS, or provider
-configuration changes.
+The website does not need to expose internal compatibility or quarantine
+details. Its primary installation command is:
 
-Preview the site locally from the repository root:
+```sh
+brew install geo4orce/tap/vv
+```
+
+`main` automatically deploys the site through DigitalOcean App Platform. Use
+the `infra` repository only for hosting, domain, DNS, redirect, TLS, or
+provider configuration changes.
+
+Preview and validate from the repository root:
 
 ```sh
 make serve
 make serve PORT=3000
-```
-
-The preview server requires Node.js, installs no packages, binds only to
-localhost, disables browser caching, and is not part of production deployment.
-
-Validate the production HTML with the pinned, transient linter:
-
-```sh
 make lint
 ```
 
-Keep HTML human-readable. Prefer structural layout over whitespace-sensitive
-`<pre>` formatting when markup needs syntax highlighting or aligned columns.
-Do not run Prettier over these files.
+The preview server installs no packages, binds only to localhost, disables
+browser caching, and is not part of production deployment. `make lint` uses a
+pinned transient HTML validator. Keep HTML human-readable and do not run
+Prettier over it.
 
 ## Documentation ownership
 
-- Put implementation and maintenance context in `AGENTS.md`.
-- Put normative behavior and acceptance criteria in `SPEC.md`.
-- Keep `README.md` short and consistent with `index.html`.
-- Put installed command details in `man/vv.1`.
-- Put public contribution procedure in `CONTRIBUTING.md`.
-- Do not duplicate release history in a changelog.
+- Keep `README.md` terse and public.
+- Put installed command behavior in `man/vv.1`.
+- Put tool-maintainer compatibility guidance in `CONTRIBUTING.md`.
+- Keep implementation, testing, release, and deployment rules in `AGENTS.md`.
+- Treat `tests/test.sh` as the executable acceptance contract.
+- Do not recreate `SPEC.md` or duplicate release history in a changelog.
 
 Use ordinary hyphens, not em dashes.

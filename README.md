@@ -6,6 +6,9 @@ Give it a tool. Get strict `X.Y.Z`.
 
 Missing or unparseable? Becomes `0.0.0`.
 
+Maintaining a tool? See [CONTRIBUTING.md](CONTRIBUTING.md) for compatibility
+guidance, including how to inspect and leave the quarantine list.
+
 ## Install
 
 ```console
