@@ -3,4 +3,5 @@
 _arguments \
   '(- 1 *)'{-h,--help}'[show help]' \
   '(- 1 *)'{--verified-version,--version}'[show vv version]' \
+  '(- 1 *)--quarantine[list or explain quarantined tools]::tool:_command_names' \
   '1:tool:_command_names'

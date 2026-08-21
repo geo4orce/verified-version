@@ -1,4 +1,4 @@
-.Dd August 17, 2026
+.Dd August 21, 2026
 .Dt VV 1
 .Os
 .Sh NAME
@@ -10,6 +10,10 @@
 .Pp
 .Nm
 .Fl -verified-version
+.Pp
+.Nm
+.Fl -quarantine
+.Op Ar tool
 .Sh DESCRIPTION
 .Nm
 prints exactly one
@@ -22,11 +26,19 @@ Normal lookups always exit zero.
 .Pp
 Lookup first reads a declared version file at
 .Pa <prefix>/share/vv/<tool>
+without executing the tool, then checks the quarantine registry
+.Pq Sx QUARANTINE
+for a small number of tools that need different handling, then on macOS reads
+an application bundle's
+.Pa Info.plist
 without executing the tool, then tries the strict
 .Fl -verified-version
 protocol, then a tool-agnostic ladder of common version flags
 .Pq Fl -version , Fl version , Cm version , Fl V , Fl v .
-The first source that yields a dotted numeric version wins. Any other result is
+Declared files and
+.Pa Info.plist
+fields are trusted sources and may contain a bare integer. The strict protocol
+and generic ladder require a dotted numeric version. Any other result is
 .Li 0.0.0 .
 .Sh OPTIONS
 .Bl -tag -width Ds
@@ -34,6 +46,13 @@ The first source that yields a dotted numeric version wins. Any other result is
 Print the
 .Nm
 version.
+.It Fl -quarantine
+List every quarantined tool, its action, and its reason.
+.It Fl -quarantine Ar tool
+Explain one quarantined tool: its reason and how to leave the list. Exits zero
+whether or not
+.Ar tool
+is quarantined.
 .It Fl h , Fl -help
 Print brief help.
 .El
@@ -42,31 +61,86 @@ Print brief help.
 .It Ev VV_TIMEOUT
 Probe timeout in seconds. Default: 5.
 .El
+.Sh QUARANTINE
+.Nm
+keeps a small, inline, documented registry of tools that misbehave under
+generic probing or misreport their version through
+.Pa Info.plist .
+Each entry names one tool, one action, and one reason. There are two actions:
+.Bl -tag -width Ds
+.It Cm flag=Ar x
+Probe only the single flag
+.Ar x ,
+never the generic ladder. Used when a tool's usual
+.Fl -version
+flag has a side effect, such as
+.Xr pico 1
+opening an editor buffer instead of printing a version.
+.It Cm exec
+Run the strict protocol and generic ladder even though the tool resolves
+inside a macOS application bundle. Used when a bundle's
+.Pa Info.plist
+reports the bundling application's version rather than the tool's own, such as
+the Docker-family CLIs bundled inside Rancher Desktop.
+.El
+.Pp
+A quarantine entry is matched first by the invoked name, then by the resolved
+real binary's name, so an alias inherits its target's entry (for example macOS
+.Xr nano 1 ,
+a symlink to
+.Xr pico 1 )
+while a distinct binary that merely shares a name (GNU
+.Xr nano 1 )
+is left to the normal ladder.
+.Pp
+A declared
+.Pa share/vv/<tool>
+file always wins over a quarantine entry. Run
+.Nm Fl -quarantine
+to list every quarantined tool, or
+.Nm Fl -quarantine Ar tool
+to see one entry's reason, action, and applicable fix. For a
+.Cm flag=
+entry, the preferred upstream fix is
+.Fl -verified-version ;
+a safe conventional
+.Fl -version
+is also accepted after the entry is removed. For an
+.Cm exec
+entry, the tool must publish a declaration, provide authoritative bundle
+metadata, or install its CLI outside the application bundle before the
+exception can be removed.
 .Sh COMPATIBILITY
 .Nm
-keeps no per-command exceptions: every tool is tried the same way. A tool
-becomes fully compatible by shipping a
+follows one generic lookup for every tool, plus the small documented
+quarantine list above for tools that are unsafe to probe generically or that
+misreport their version. A tool may always become compatible by shipping a
 .Pa share/vv/<tool>
-version file or by implementing
-.Fl -verified-version ;
-otherwise the generic flag ladder is attempted. Only a dotted numeric version is
-accepted, so a bare integer in help text is never mistaken for a version. A tool
-that reports no parseable version resolves to
+version file. Outside an application bundle, it may instead implement
+.Fl -verified-version
+or expose a safe conventional version command for the generic flag ladder.
+Only a dotted numeric version is accepted from the ladder, so a bare integer
+in help text is never mistaken for a version. A tool that reports no parseable
+version resolves to
 .Li 0.0.0 .
 There are no user recipe or parser configuration files.
 .Pp
 A tool that resolves to a path inside a macOS application bundle
 .Pq Pa *.app
-is never executed, because even a bundled command-line stub may open a window on
-an unknown option. Such a tool yields
-.Li 0.0.0
-unless it ships a
+is never executed unless it is quarantined with the
+.Cm exec
+action. Such a tool resolves through its bundle's
+.Pa Info.plist
+.Pq Sy CFBundleShortVersionString , falling back to Sy CFBundleVersion ,
+or through a
 .Pa share/vv/<tool>
-file, which is read without execution.
+file, which is also read without execution.
 .Sh EXIT STATUS
 The utility exits zero for every normal result, including missing or
-unparseable tools. Invalid options exit two. Any other non-zero status
-indicates a defect in
+unparseable tools, and for
+.Fl -quarantine
+queries. Invalid options exit two. Any other non-zero status indicates a
+defect in
 .Nm .
 .Sh AUTHORS
 .An Geo Artemenko

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-VV_VERSION=4.0.0
+VV_VERSION=4.1.0
 VV_TIMEOUT=${VV_TIMEOUT:-5}
 VV_ESC=$(printf '\033')
 
@@ -10,6 +10,85 @@ if command -v timeout >/dev/null 2>&1; then
 elif command -v gtimeout >/dev/null 2>&1; then
   VV_TIMEOUT_BIN=gtimeout
 fi
+
+# Inline registry of tools that misbehave under generic probing or misreport
+# via Info.plist. One row per tool: name|action|reason. `flag=<x>` probes only
+# that one flag (never the ladder); `exec` runs the normal protocol+ladder
+# despite the tool resolving inside a .app. The reason string doubles as code
+# doc and `--quarantine <tool>` output. Kept inline and tiny by design: this is
+# the one place `vv` bends its "no per-command exceptions" promise, and it
+# stays queryable and narrow on purpose.
+VV_QUARANTINE='
+pico|flag=-version|pico --version opens the editor instead of printing a version; -version is the only flag safe to probe. Also covers aliases that resolve to pico, e.g. macOS nano (a symlink to pico); real GNU nano is not matched and uses the normal ladder
+docker|exec|resolves inside Rancher Desktop.app; Info.plist reports Rancher Desktop'"'"'s version, not docker'"'"'s own
+docker-compose|exec|resolves inside Rancher Desktop.app; Info.plist reports Rancher Desktop'"'"'s version, not docker-compose'"'"'s own
+kubectl|exec|resolves inside Rancher Desktop.app; Info.plist reports Rancher Desktop'"'"'s version, not kubectl'"'"'s own
+helm|exec|resolves inside Rancher Desktop.app; Info.plist reports Rancher Desktop'"'"'s version, not helm'"'"'s own
+nerdctl|exec|resolves inside Rancher Desktop.app; Info.plist reports Rancher Desktop'"'"'s version, not nerdctl'"'"'s own
+'
+
+VV_QUARANTINE_FLAG_FIX='Preferred upstream fix: implement --verified-version, then remove this quarantine entry. A safe conventional --version output is also accepted after removal; a share/vv/<tool> file avoids execution entirely.'
+VV_QUARANTINE_EXEC_FIX='This tool resolves inside a .app bundle. To remove the exec exception, ship a share/vv/<tool> file, make the bundle metadata authoritative for this tool, or install the CLI outside the bundle where --verified-version or a safe conventional --version can run.'
+
+# Look up one quarantine row by exact tool name. Prints the matching row and
+# returns 0, or returns 1 if the tool is not quarantined. Uses plain string
+# comparison (never grep/case globbing) so a tool name can't be crafted to
+# match more than itself.
+vv_quarantine_row() {
+  _q_tool=$1
+  _q_oldifs=$IFS
+  IFS='
+'
+  for _q_row in $VV_QUARANTINE; do
+    IFS=$_q_oldifs
+    [ -z "$_q_row" ] && continue
+    _q_name=${_q_row%%|*}
+    if [ "$_q_name" = "$_q_tool" ]; then
+      printf '%s\n' "$_q_row"
+      return 0
+    fi
+  done
+  IFS=$_q_oldifs
+  return 1
+}
+
+# Print every quarantined tool, action, and reason, one per line, tab-separated.
+vv_quarantine_list() {
+  _ql_oldifs=$IFS
+  IFS='
+'
+  for _ql_row in $VV_QUARANTINE; do
+    IFS=$_ql_oldifs
+    [ -z "$_ql_row" ] && continue
+    _ql_name=${_ql_row%%|*}
+    _ql_rest=${_ql_row#*|}
+    _ql_action=${_ql_rest%%|*}
+    _ql_reason=${_ql_rest#*|}
+    printf '%s\t%s\t%s\n' "$_ql_name" "$_ql_action" "$_ql_reason"
+  done
+  IFS=$_ql_oldifs
+}
+
+# `vv --quarantine [tool]`: list all quarantined tools, or explain one.
+vv_quarantine_cmd() {
+  if [ -z "${1:-}" ]; then
+    vv_quarantine_list
+    return 0
+  fi
+  if _row=$(vv_quarantine_row "$1"); then
+    _rest=${_row#*|}
+    _action=${_rest%%|*}
+    _reason=${_rest#*|}
+    printf '%s: %s (%s)\n' "$1" "$_reason" "$_action"
+    case $_action in
+      flag=*) printf '%s\n' "$VV_QUARANTINE_FLAG_FIX" ;;
+      exec) printf '%s\n' "$VV_QUARANTINE_EXEC_FIX" ;;
+    esac
+    return 0
+  fi
+  printf '%s: not quarantined\n' "$1"
+  return 0
+}
 
 # Execute a tool with stdin closed and stderr folded into stdout, bounded by
 # VV_TIMEOUT when a timeout helper exists. All command execution flows through here.
@@ -22,11 +101,20 @@ vv_run() {
 }
 
 # Extract the first dotted numeric version (X.Y[.Z...]) from noisy output,
-# ignoring ANSI. Bare integers are intentionally rejected: an unadorned number in
-# help text is the main source of false positives when probing unknown flags.
+# ignoring ANSI. Bare integers are intentionally rejected: an unadorned number
+# in help text is the main source of false positives when probing unknown
+# flags.
 vv_extract() {
   printf '%s\n' "$1" | sed "s/${VV_ESC}\[[0-9;]*[A-Za-z]//g" | \
     grep -oE '[0-9]+(\.[0-9]+)+' | head -1
+}
+
+# Like vv_extract, but for trusted sources only (a declared share/vv file, or
+# an Info.plist field): also accepts a bare integer with no dot, since those
+# sources can't be confused with noisy --help output.
+vv_extract_trusted() {
+  printf '%s\n' "$1" | sed "s/${VV_ESC}\[[0-9;]*[A-Za-z]//g" | \
+    grep -oE '[0-9]+(\.[0-9]+)*' | head -1
 }
 
 # Normalize one version component to a bare non-negative integer: strip leading
@@ -72,6 +160,8 @@ vv $VV_VERSION
 
 Usage:
   vv <tool>               print the tool version as X.Y.Z
+  vv --quarantine         list quarantined tools, actions, and reasons
+  vv --quarantine <tool>  explain one quarantined tool and how to fix it
   vv --verified-version   print the vv version
   vv --version            print the vv version
   vv -h                   show help
@@ -94,11 +184,55 @@ vv_realpath() {
   printf '%s' "$_p"
 }
 
-# Resolve a tool to exactly one X.Y.Z, else 0.0.0. Never errors, never launches a
-# GUI. Order: (1) a declared version file at <prefix>/share/vv/<name> (no
-# execution), (2) the strict --verified-version protocol, (3) a tool-agnostic
-# ladder of common version flags. Tools resolved inside a .app bundle are never
-# executed, so only source (1) can resolve them. No command is special-cased.
+# Read a version out of a macOS application bundle's Info.plist, without ever
+# executing anything inside the bundle. Tries CFBundleShortVersionString first,
+# falls back to CFBundleVersion. Mac-only; guarded by `command -v` so it is a
+# no-op (empty result) on Linux, where PlistBuddy does not exist.
+vv_plist_version() {
+  _app=$1
+  _plist="$_app/Contents/Info.plist"
+  [ -f "$_plist" ] || return
+  command -v /usr/libexec/PlistBuddy >/dev/null 2>&1 || return
+  _v=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$_plist" 2>/dev/null) || _v=
+  if [ -z "$_v" ]; then
+    _v=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$_plist" 2>/dev/null) || _v=
+  fi
+  printf '%s' "$_v"
+}
+
+# Run the strict --verified-version protocol followed by the generic ladder.
+# Shared by the normal (non-.app) path and by quarantined `exec` tools that
+# bypass the .app guard. Always prints a result and returns 0.
+vv_probe() {
+  _bin=$1
+
+  if _p=$(vv_run "$_bin" --verified-version); then
+    if [ "$(printf '%s\n' "$_p" | wc -l | tr -d ' ')" -eq 1 ] && \
+      printf '%s\n' "$_p" | grep -qE \
+        '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
+      printf '%s\n' "$_p"
+      return
+    fi
+  fi
+
+  for _flag in --version -version version -V -v; do
+    _raw=$(vv_run "$_bin" "$_flag")
+    _status=$?
+    [ "$_status" -eq 124 ] && continue
+    _v=$(vv_extract "$_raw")
+    [ -n "$_v" ] && { vv_normalize "$_v"; return; }
+  done
+
+  printf '0.0.0\n'
+}
+
+# Resolve a tool to exactly one X.Y.Z, else 0.0.0. Never errors, never launches
+# a GUI. Order: (1) a declared version file at <prefix>/share/vv/<name> (no
+# execution), (2) quarantine override for known oddballs, (3) a read-only
+# Info.plist reader for tools resolved inside a .app (still no execution), (4)
+# the strict --verified-version protocol, (5) a tool-agnostic ladder of common
+# version flags. Non-quarantined tools resolved inside a .app bundle are never
+# executed, so only sources (1) and (3) can resolve them.
 vv_lookup() {
   _bin=$1
 
@@ -114,12 +248,13 @@ vv_lookup() {
 
   # 1) Declarative: a tool may publish its version at <prefix>/share/vv/<name>,
   #    mirroring man pages under <prefix>/share/man. Read-only, never executed;
-  #    preferred because it resolves without running the tool at all.
+  #    preferred because it resolves without running the tool at all, and it
+  #    wins over quarantine and .app handling alike.
   case $_real in
     */bin/"$_name")
       _decl=${_real%/bin/"$_name"}/share/vv/$_name
       if [ -f "$_decl" ]; then
-        _declared=$(vv_extract "$(head -1 "$_decl")")
+        _declared=$(vv_extract_trusted "$(head -1 "$_decl")")
         if [ -n "$_declared" ]; then
           vv_normalize "$_declared"
           return
@@ -128,36 +263,53 @@ vv_lookup() {
       ;;
   esac
 
-  # Never execute anything inside a macOS application bundle. Even bundled CLI
-  # stubs (e.g. subl) treat an unknown flag as "open a window", so probing risks
-  # a side effect. Inside a bundle only the declarative file above can resolve a
-  # version; otherwise the result is 0.0.0.
-  case $_real in
-    *.app/*) printf '0.0.0\n'; return ;;
-  esac
-
-  # 2) Gold: the strict --verified-version protocol (one clean X.Y.Z, exit zero).
-  if _p=$(vv_run "$_bin" --verified-version); then
-    if [ "$(printf '%s\n' "$_p" | wc -l | tr -d ' ')" -eq 1 ] && \
-      printf '%s\n' "$_p" | grep -qE \
-        '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'; then
-      printf '%s\n' "$_p"
-      return
-    fi
+  # 2) Quarantine: a small, documented list of tools that are unsafe to probe
+  #    generically or that misreport via plist. See `vv --quarantine`. Matched
+  #    by the invoked name first, then by the resolved real binary's name, so an
+  #    alias inherits its target's entry (e.g. macOS nano -> pico) while a real
+  #    binary that merely shares a name (GNU nano) is left to the normal ladder.
+  #    Invoked name wins, so tools that resolve through a differently-named
+  #    helper (e.g. kubectl -> kuberlr) match on the name the user typed.
+  if _q_row=$(vv_quarantine_row "$_name") || _q_row=$(vv_quarantine_row "${_real##*/}"); then
+    _q_rest=${_q_row#*|}
+    _q_action=${_q_rest%%|*}
+    case $_q_action in
+      flag=*)
+        _q_flag=${_q_action#flag=}
+        _raw=$(vv_run "$_bin" "$_q_flag")
+        _status=$?
+        if [ "$_status" -ne 124 ]; then
+          _v=$(vv_extract "$_raw")
+          [ -n "$_v" ] && { vv_normalize "$_v"; return; }
+        fi
+        printf '0.0.0\n'
+        return
+        ;;
+      exec)
+        vv_probe "$_bin"
+        return
+        ;;
+    esac
   fi
 
-  # 3) Ladder: tool-agnostic version idioms, highest confidence first. The first
-  #    non-timed-out invocation that yields a dotted numeric version wins; other
-  #    non-zero exit statuses are ignored.
-  for _flag in --version -version version -V -v; do
-    _raw=$(vv_run "$_bin" "$_flag")
-    _status=$?
-    [ "$_status" -eq 124 ] && continue
-    _v=$(vv_extract "$_raw")
-    [ -n "$_v" ] && { vv_normalize "$_v"; return; }
-  done
+  # Never execute anything inside a macOS application bundle, except a
+  # quarantined `exec` tool (handled above). Even bundled CLI stubs (e.g.
+  # subl) treat an unknown flag as "open a window", so probing risks a side
+  # effect. Read the bundle's Info.plist instead: read-only, never executes.
+  case $_real in
+    *.app/*)
+      _app=${_real%.app/*}.app
+      _plist_v=$(vv_plist_version "$_app")
+      if [ -n "$_plist_v" ]; then
+        _v=$(vv_extract_trusted "$_plist_v")
+        [ -n "$_v" ] && { vv_normalize "$_v"; return; }
+      fi
+      printf '0.0.0\n'
+      return
+      ;;
+  esac
 
-  printf '0.0.0\n'
+  vv_probe "$_bin"
 }
 
 case ${1:-} in
@@ -166,6 +318,9 @@ case ${1:-} in
     ;;
   --verified-version|--version)
     printf '%s\n' "$VV_VERSION"
+    ;;
+  --quarantine)
+    vv_quarantine_cmd "${2:-}"
     ;;
   -*)
     printf 'unknown option: %s\n' "$1" >&2
