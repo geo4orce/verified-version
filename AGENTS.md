@@ -90,7 +90,8 @@ per-command tables. Put public compatibility guidance in `CONTRIBUTING.md`.
 - `Makefile` and `tools/serve.mjs`: dependency-free local website preview.
 
 There is intentionally no `SPEC.md` or `CHANGELOG.md`. The command, tests, and
-manual own CLI behavior; Git tags and commit history own release history.
+manual own CLI behavior; Git tags, GitHub Releases, and commit history own
+release history.
 
 ## Tests
 
@@ -120,19 +121,29 @@ Use semantic versioning for `vv` itself:
 
 For a version change:
 
-1. Update `VERSION` and `VV_VERSION` in `vv`.
+1. Update `VERSION`, `VV_VERSION` in `vv`, and any CLI version displayed by
+   `index.html`.
 2. Update tests and the man-page date when behavior or documentation changes.
-3. Run the complete test and shellcheck suite on Linux and macOS.
-4. Commit the release state and create the matching `vX.Y.Z` Git tag.
-5. After the tag exists, update the external Homebrew tap formula URL,
-   checksum, version assertion, and installed file list.
-6. Verify the tap formula installs and its test passes.
+3. Run the complete local test and shellcheck suite.
+4. Commit the release state, create the matching annotated `vX.Y.Z` Git tag,
+   and push `main` and the tag atomically.
+5. Create a GitHub Release named `vv X.Y.Z` from the tag, mark it latest, and
+   verify the repository's latest-release page resolves to it.
+6. Verify the source workflow passes on Ubuntu and macOS and the deployed
+   website shows the intended CLI version.
+7. Validate the tagged source checkout on macOS before publishing Homebrew.
+8. Update the external Homebrew tap formula URL, checksum, version assertion,
+   and installed file list.
+9. Verify the tap's macOS workflow installs the formula and its test passes.
 
-The Git tag releases the CLI source. The separate Homebrew tap publishes that
-release to `brew`; pushing this repository alone does not update the formula.
-The formula installs only `vv`, the manual, and shell completions. Do not
-report a CLI release complete until the formula update is on the tap's default
-branch and `brew install geo4orce/tap/vv` resolves to the new version.
+The Git tag and GitHub Release publish the CLI source. The separate Homebrew
+tap publishes that release to `brew`; pushing this repository alone does not
+update the formula. The formula installs only `vv`, the manual, and shell
+completions. Do not report source publication complete until the tag, GitHub
+Release, latest-release page, source workflow, and visible website version are
+verified. Do not report the CLI release complete until the formula update is
+on the tap's default branch and `brew install geo4orce/tap/vv` resolves to the
+new version.
 
 ## Website and deployment
 
